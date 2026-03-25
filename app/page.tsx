@@ -1,369 +1,265 @@
-'use client'
+import { revalidatePath } from 'next/cache'
+import Image from 'next/image'
+import Link from 'next/link'
+import AuthButtons from '@/app/components/AuthButtons'
+import { getAuthSession } from '@/lib/auth'
+import {
+  getUserLinksByEmail,
+  normalizeLinks,
+  upsertUserLinksByEmail,
+} from '@/lib/userLinks'
 
-import { useState, useEffect } from 'react'
-import Head from 'next/head'
+export const metadata = {
+  title: 'Your Links | WhatVibes',
+  description: 'Sign in with Google and share your social links.',
+}
 
-export default function Home() {
-  const [mode, setMode] = useState('room')
-  const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [resultVisible, setResultVisible] = useState(false)
+function LinkButton(props: { href: string; label: string }) {
+  return (
+    <a
+      href={props.href}
+      target="_blank"
+      rel="noreferrer"
+      className="flex w-full items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-900 shadow-sm hover:bg-neutral-50"
+    >
+      {props.label}
+    </a>
+  )
+}
 
-  const modeOptions: any = {
-    Room: [
-      { icon: '🛋️', name: 'Full Renovation' },
-      { icon: '🌿', name: 'Biophilic Design' },
-    ],
-    Face: [
-      { icon: '🕐', name: '10 Years Later' },
-      { icon: '💄', name: 'Glam Makeover' },
-    ],
-  }
+export default async function Page() {
+  const session = await getAuthSession()
+  const email = session?.user?.email ?? null
 
-  // Add FAQ structured data for rich results
-  useEffect(() => {
-    const script = document.createElement('script')
-    script.type = 'application/ld+json'
-    script.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "How does WhatVibes AI transformation work?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "WhatVibes uses advanced artificial intelligence to analyze your uploaded photo and generate realistic transformations. Simply select your mode (Room or Face), upload an image, and our AI instantly creates a stunning before/after result."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What types of transformations can I create?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "You can transform rooms with Full Renovation or Biophilic Design styles, or transform faces with 10 Years Later aging effects or Glam Makeover enhancements. More styles coming soon!"
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is WhatVibes free to use?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes! WhatVibes offers free AI transformations with no hidden costs. Upload your images and generate professional before/after results instantly."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What image formats are supported?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "We support JPG, PNG, and WEBP formats. For best results, use clear, well-lit photos with faces facing forward or rooms with good visibility."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How long does the AI transformation take?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Transformations typically complete within 10-30 seconds, depending on image complexity and server load. You'll see your before/after comparison immediately."
-          }
-        }
-      ]
+  const profile = email ? await getUserLinksByEmail(email) : null
+  const links = profile?.links ?? {}
+
+  async function saveLinks(formData: FormData) {
+    'use server'
+    const session = await getAuthSession()
+    const email = session?.user?.email
+    if (!email) throw new Error('Unauthorized')
+
+    const nextLinks = normalizeLinks({
+      youtube: String(formData.get('youtube') ?? ''),
+      instagram: String(formData.get('instagram') ?? ''),
+      linkedin: String(formData.get('linkedin') ?? ''),
+      facebook: String(formData.get('facebook') ?? ''),
+      x: String(formData.get('x') ?? ''),
+      other: String(formData.get('other') ?? ''),
     })
-    document.head.appendChild(script)
-    return () => {
-      document.head.removeChild(script)
-    }
-  }, [])
 
-  const handleFile = (file: File) => {
-    setFile(file)
-    const reader = new FileReader()
-    reader.onload = (e) => setPreview(e.target?.result as string)
-    reader.readAsDataURL(file)
+    await upsertUserLinksByEmail({
+      email,
+      name: session.user?.name ?? null,
+      image: session.user?.image ?? null,
+      links: nextLinks,
+    })
 
-    setGeneratedImage(null)
-    setResultVisible(false)
-  }
-
-  const generate = async () => {
-    if (!file) {
-      alert('Please upload image first')
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const formData = new FormData()
-      formData.append('image', file)
-      formData.append('mode', mode)
-
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        body: formData,
-      })
-
-      const data = await res.json()
-
-      if (data.image) {
-        setGeneratedImage(data.image)
-        setResultVisible(true)
-      } else {
-        alert(data.error || 'Failed')
-      }
-    } catch (err) {
-      console.error(err)
-      alert('Error')
-    }
-
-    setLoading(false)
+    revalidatePath('/')
   }
 
   return (
-    <>
-      <Head>
-        <title>WhatVibes | AI Image Transformation Tool - Before & After Generator</title>
-        <meta name="description" content="Transform any room or face with AI-powered before/after transformations. Upload your photo and see stunning renovations, makeovers, and age progression in seconds. Free AI image transformation tool." />
-        <meta name="keywords" content="AI transformation, before after generator, room renovation AI, face makeover AI, biophilic design, age progression, glam makeover, interior design AI, photo transformation, virtual renovation, AI makeover tool, whatvibes" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:title" content="WhatVibes - AI Image Transformation Tool" />
-        <meta property="og:description" content="Transform any room or face with AI-powered before/after transformations. Upload your photo and see stunning results instantly." />
-        <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://whatvibes.com" />
-      </Head>
+    <main className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col gap-8 px-4 py-10">
+      <header className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="grid size-12 place-items-center rounded-2xl bg-black text-white">
+            WV
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">Your Link Page</h1>
+            <p className="text-sm text-neutral-600">
+              Add your social links and share them anywhere.
+            </p>
+          </div>
+        </div>
+        <AuthButtons signedIn={Boolean(email)} />
+      </header>
 
-      <main className="bg-[#0a0a0a] text-white min-h-screen">
-
-        {/* HEADER */}
-        <header className="flex justify-between items-center px-8 py-5 border-b border-neutral-800 backdrop-blur">
-          <h1 className="text-3xl font-bold tracking-wider">
-            <span className="text-orange-500">What</span>Vibes
-          </h1>
-          <span className="bg-orange-500 px-3 py-1 text-xs rounded-full animate-pulse">
-            ✦ VIRAL TOOL
-          </span>
-        </header>
-
-        {/* HERO */}
-        <section className="text-center py-16 px-4">
-          <h1 className="text-[70px] leading-none font-extrabold tracking-tight">
-            SEE  
-            <span className="text-orange-500 ml-4">TRANSFORMATION</span>
-          </h1>
-          <p className="text-gray-400 mt-4 max-w-2xl mx-auto">
-            Upload any photo and generate stunning before/after results with our advanced AI transformation technology
-          </p>
+      {!email ? (
+        <section className="grid gap-6 rounded-3xl border border-neutral-200 bg-white p-8 shadow-sm">
+          <div className="max-w-xl">
+            <h2 className="text-3xl font-bold tracking-tight">
+              One page for all your links
+            </h2>
+            <p className="mt-2 text-neutral-600">
+              Sign in with Google to create your own Linktree-style profile.
+            </p>
+          </div>
+          <div>
+            <AuthButtons signedIn={false} />
+          </div>
+          <div className="text-sm text-neutral-600">
+            The previous home page is still available at{' '}
+            <Link className="font-semibold underline" href="/transform">
+              /transform
+            </Link>
+            .
+          </div>
         </section>
+      ) : (
+        <div className="grid gap-8 lg:grid-cols-2">
+          <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold">Edit links</h2>
+              {session?.user?.image ? (
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name ?? 'Profile'}
+                  width={40}
+                  height={40}
+                  className="size-10 rounded-full"
+                />
+              ) : null}
+            </div>
+            {profile?.publicId ? (
+              <div className="mt-3 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+                Your public page:{' '}
+                <Link className="font-semibold underline" href={`/u/${profile.publicId}`}>
+                  /u/{profile.publicId}
+                </Link>
+              </div>
+            ) : null}
+            <form action={saveLinks} className="mt-4 grid gap-4">
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold" htmlFor="youtube">
+                  YouTube
+                </label>
+                <input
+                  id="youtube"
+                  name="youtube"
+                  placeholder="https://youtube.com/@yourchannel or @yourchannel"
+                  defaultValue={links.youtube ?? ''}
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                />
+              </div>
 
-        {/* MODE */}
-        <div className="flex gap-3 justify-center mb-10 flex-wrap">
-          {Object.keys(modeOptions).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`px-5 py-2 rounded-xl border ${
-                mode === m
-                  ? 'border-orange-500 bg-orange-500/10'
-                  : 'border-neutral-700 bg-neutral-900'
-              }`}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold" htmlFor="instagram">
+                  Instagram
+                </label>
+                <input
+                  id="instagram"
+                  name="instagram"
+                  placeholder="https://instagram.com/yourname or @yourname"
+                  defaultValue={links.instagram ?? ''}
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                />
+              </div>
 
-        {/* UPLOAD */}
-        <div className="max-w-xl mx-auto px-4">
-          <div
-            className="border-2 border-dashed border-neutral-700 rounded-2xl p-10 text-center cursor-pointer hover:border-orange-500 transition"
-            onClick={() => document.getElementById('fileInput')?.click()}
-          >
-            {!preview ? (
-              <>
-                <p className="text-xl mb-2">📸 Upload Image</p>
-                <p className="text-sm text-gray-400">JPG, PNG, WEBP (Max 10MB)</p>
-              </>
-            ) : (
-              <img
-                src={preview}
-                alt="Uploaded preview image for AI transformation"
-                className="w-full h-72 object-cover rounded-xl"
-              />
-            )}
-          </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold" htmlFor="linkedin">
+                  LinkedIn
+                </label>
+                <input
+                  id="linkedin"
+                  name="linkedin"
+                  placeholder="https://linkedin.com/in/you or you"
+                  defaultValue={links.linkedin ?? ''}
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                />
+              </div>
 
-          <input
-            type="file"
-            id="fileInput"
-            hidden
-            accept="image/*"
-            onChange={(e) => {
-              if (e.target.files?.[0]) handleFile(e.target.files[0])
-            }}
-          />
-        </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold" htmlFor="facebook">
+                  Facebook
+                </label>
+                <input
+                  id="facebook"
+                  name="facebook"
+                  placeholder="https://facebook.com/you or you"
+                  defaultValue={links.facebook ?? ''}
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                />
+              </div>
 
-        {/* BUTTON */}
-        <div className="max-w-xl mx-auto mt-6 px-4">
-          <button
-            onClick={generate}
-            className="w-full py-5 text-xl rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 hover:scale-[1.02] transition font-semibold"
-          >
-            ✦ GENERATE TRANSFORMATION ✦
-          </button>
-        </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold" htmlFor="x">
+                  X (Twitter)
+                </label>
+                <input
+                  id="x"
+                  name="x"
+                  placeholder="https://x.com/you or @you"
+                  defaultValue={links.x ?? ''}
+                  className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                />
+              </div>
 
-        {/* LOADING */}
-        {loading && (
-          <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50 gap-4">
-            <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-400 text-sm tracking-widest">
-              TRANSFORMING...
-            </p>
-          </div>
-        )}
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold" htmlFor="other">
+                  Other links (one per line)
+                </label>
+                <textarea
+                  id="other"
+                  name="other"
+                  rows={4}
+                  placeholder={'https://your.site\nhttps://another.link'}
+                  defaultValue={(links.other ?? []).join('\n')}
+                  className="w-full resize-none rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm outline-none focus:border-black"
+                />
+              </div>
 
-        {/* RESULT */}
-        {resultVisible && (
-          <div className="max-w-5xl mx-auto mt-14 px-4">
+              <button
+                type="submit"
+                className="mt-2 rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white hover:bg-black/90"
+              >
+                Save links
+              </button>
+            </form>
+          </section>
 
-            <div className="grid grid-cols-2 border border-neutral-800 rounded-2xl overflow-hidden">
-
-              {/* BEFORE */}
-              <div className="border-r border-neutral-800">
-                <div className="bg-neutral-900 text-gray-400 text-xs px-4 py-2 tracking-widest">
-                  ◀ BEFORE
+          <section className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-bold">Preview</h2>
+            <div className="mt-4 flex flex-col items-center gap-4">
+              {session?.user?.image ? (
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name ?? 'Profile'}
+                  width={80}
+                  height={80}
+                  className="size-20 rounded-full"
+                />
+              ) : (
+                <div className="size-20 rounded-full bg-neutral-200" />
+              )}
+              <div className="text-center">
+                <div className="text-lg font-bold">
+                  {session?.user?.name ?? 'You'}
                 </div>
-                {preview && (
-                  <img
-                    src={preview}
-                    alt="Original uploaded image before AI transformation"
-                    className="w-full h-[400px] object-cover"
+                <div className="text-sm text-neutral-600">{email}</div>
+              </div>
+
+              <div className="w-full max-w-sm space-y-3">
+                {links.youtube ? <LinkButton href={links.youtube} label="YouTube" /> : null}
+                {links.instagram ? (
+                  <LinkButton href={links.instagram} label="Instagram" />
+                ) : null}
+                {links.linkedin ? <LinkButton href={links.linkedin} label="LinkedIn" /> : null}
+                {links.facebook ? <LinkButton href={links.facebook} label="Facebook" /> : null}
+                {links.x ? <LinkButton href={links.x} label="X" /> : null}
+                {(links.other ?? []).map((href) => (
+                  <LinkButton
+                    key={href}
+                    href={href}
+                    label={href.replace(/^https?:\/\//, '')}
                   />
-                )}
-              </div>
-
-              {/* AFTER */}
-              <div>
-                <div className="bg-orange-500/10 text-orange-500 text-xs px-4 py-2 tracking-widest">
-                  AFTER ▶
-                </div>
-
-                {generatedImage ? (
-                  <div className="relative">
-                    <img
-                      src={generatedImage}
-                      alt="AI generated after transformation result"
-                      className="w-full h-[400px] object-cover"
-                    />
-
-                    <span className="absolute bottom-3 right-3 bg-orange-500 text-xs px-3 py-1 rounded-full">
-                      ✦ WhatVibes
-                    </span>
+                ))}
+                {!links.youtube &&
+                !links.instagram &&
+                !links.linkedin &&
+                !links.facebook &&
+                !links.x &&
+                !(links.other?.length ?? 0) ? (
+                  <div className="rounded-xl border border-dashed border-neutral-300 p-4 text-center text-sm text-neutral-600">
+                    Add links on the left to see your page.
                   </div>
-                ) : (
-                  <div className="h-[400px] flex items-center justify-center bg-neutral-900">
-                    ✨ AI Result
-                  </div>
-                )}
-              </div>
-
-            </div>
-
-          </div>
-        )}
-
-        {/* SEO RICH CONTENT - FEATURES & FAQ */}
-        <div className="max-w-5xl mx-auto px-4 py-16">
-          
-          {/* Features Section - Keyword Rich */}
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              AI-Powered <span className="text-orange-500">Before & After</span> Transformations
-            </h2>
-            <p className="text-gray-400 max-w-3xl mx-auto">
-              WhatVibes uses cutting-edge artificial intelligence to transform your photos in seconds. 
-              Whether you're planning a home renovation, curious about aging effects, or want to see a glam makeover, 
-              our AI delivers professional results instantly.
-            </p>
-          </div>
-
-          {/* Benefits Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mb-16">
-            <div className="bg-neutral-900/50 rounded-xl p-6 border border-neutral-800">
-              <div className="text-3xl mb-3">🏠</div>
-              <h3 className="text-xl font-semibold mb-2">Room Transformations</h3>
-              <p className="text-gray-400 text-sm">Full renovation and biophilic design styles for interior spaces, virtual staging, and home makeovers.</p>
-            </div>
-            <div className="bg-neutral-900/50 rounded-xl p-6 border border-neutral-800">
-              <div className="text-3xl mb-3">👤</div>
-              <h3 className="text-xl font-semibold mb-2">Face Transformations</h3>
-              <p className="text-gray-400 text-sm">Age progression and glam makeover effects for portraits, social media content, and creative projects.</p>
-            </div>
-            <div className="bg-neutral-900/50 rounded-xl p-6 border border-neutral-800">
-              <div className="text-3xl mb-3">⚡</div>
-              <h3 className="text-xl font-semibold mb-2">Instant Results</h3>
-              <p className="text-gray-400 text-sm">Generate transformations in seconds with our optimized AI pipeline. No waiting, no complicated software.</p>
-            </div>
-          </div>
-
-          {/* FAQ SECTION */}
-          <div className="border-t border-neutral-800 pt-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">
-              Frequently Asked <span className="text-orange-500">Questions</span>
-            </h2>
-            
-            <div className="space-y-6 max-w-4xl mx-auto">
-              <div className="bg-neutral-900/30 rounded-xl p-6 border border-neutral-800">
-                <h3 className="text-xl font-semibold mb-2">How does WhatVibes AI transformation work?</h3>
-                <p className="text-gray-400">Our AI model analyzes your uploaded image and applies the selected transformation style. For rooms, it understands spatial layout and design elements. For faces, it detects facial features and applies realistic aging or makeup effects. The result is a seamless before/after comparison.</p>
-              </div>
-              
-              <div className="bg-neutral-900/30 rounded-xl p-6 border border-neutral-800">
-                <h3 className="text-xl font-semibold mb-2">What types of transformations can I create?</h3>
-                <p className="text-gray-400">Currently, WhatVibes offers Room transformations (Full Renovation and Biophilic Design) and Face transformations (10 Years Later and Glam Makeover). We're constantly adding new styles, so check back for updates!</p>
-              </div>
-              
-              <div className="bg-neutral-900/30 rounded-xl p-6 border border-neutral-800">
-                <h3 className="text-xl font-semibold mb-2">Is WhatVibes free to use?</h3>
-                <p className="text-gray-400">Yes! WhatVibes is completely free to use. There are no hidden fees, subscriptions, or watermarks on your generated images. We believe in making AI transformation accessible to everyone.</p>
-              </div>
-              
-              <div className="bg-neutral-900/30 rounded-xl p-6 border border-neutral-800">
-                <h3 className="text-xl font-semibold mb-2">What image formats are supported?</h3>
-                <p className="text-gray-400">We support JPG, PNG, and WEBP formats. For best results, use high-quality images with good lighting. For face transformations, ensure the face is clearly visible and facing forward. For room transformations, well-lit spaces with minimal clutter work best.</p>
-              </div>
-              
-              <div className="bg-neutral-900/30 rounded-xl p-6 border border-neutral-800">
-                <h3 className="text-xl font-semibold mb-2">How long does the AI transformation take?</h3>
-                <p className="text-gray-400">Most transformations complete within 10-30 seconds. Processing time depends on image size and server load. Once complete, you'll see your before/after comparison instantly.</p>
-              </div>
-              
-              <div className="bg-neutral-900/30 rounded-xl p-6 border border-neutral-800">
-                <h3 className="text-xl font-semibold mb-2">Is my data private and secure?</h3>
-                <p className="text-gray-400">Yes, we prioritize your privacy. Uploaded images are processed temporarily and automatically deleted after transformation. We never store or share your photos. Your transformations remain yours alone.</p>
-              </div>
-              
-              <div className="bg-neutral-900/30 rounded-xl p-6 border border-neutral-800">
-                <h3 className="text-xl font-semibold mb-2">Can I use WhatVibes for commercial projects?</h3>
-                <p className="text-gray-400">Absolutely! You can use your transformed images for personal or commercial projects. However, please note that the AI model is for creative enhancement and may not be suitable for critical applications like medical or legal use.</p>
+                ) : null}
               </div>
             </div>
-          </div>
-
-          {/* Additional SEO Text Block */}
-          <div className="mt-16 text-center text-gray-500 text-sm border-t border-neutral-800 pt-8">
-            <p>WhatVibes AI Transformation Tool | Room Renovation AI | Face Makeover Generator | Before After Photo Editor | Virtual Staging AI | Age Progression Tool | Biophilic Design Generator | AI Home Renovation | Portrait Makeover AI</p>
-            <p className="mt-2">© 2025 WhatVibes - Transform Your World with AI</p>
-          </div>
+          </section>
         </div>
-
-      </main>
-    </>
+      )}
+    </main>
   )
 }
