@@ -6,6 +6,8 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ profileId: string }> }  // note: params is a Promise
 ) {
+    console.log('🚀 API route hit');   // <-- Add this
+
   // Await the params before using them
   const { profileId } = await params;
   const { email } = await req.json();
@@ -15,7 +17,10 @@ export async function POST(
   }
 
   try {
+    console.log('dsdsjfjfl;kdsj');
+
     const token = await createPendingSubscription(profileId, email);
+    console.log(token);
     const verificationUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/verify-subscription?token=${token}`;
     console.log('Created subscription token:', token);
 

@@ -6,13 +6,14 @@ import { sendWelcomeEmail } from '@/lib/email'; // optional
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const token = searchParams.get('token');
+  console.log(token);
 
   if (!token) {
     return new NextResponse('Invalid token', { status: 400 });
   }
 
   const result = await verifySubscription(token);
-
+  console.log(result);
   if (!result.success) {
     return new NextResponse('Invalid or expired token', { status: 400 });
   }

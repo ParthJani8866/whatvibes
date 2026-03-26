@@ -26,6 +26,7 @@ export default function SubscriptionButton({ profileId, profileName }: Subscript
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+      console.log(res);
 
       if (!res.ok) {
         const data = await res.json();
