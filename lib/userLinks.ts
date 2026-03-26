@@ -17,6 +17,9 @@ export type SocialLinks = {
 
 export type UserLinks = {
   publicId: string
+  views: number               // total page views
+  clicks: number              // total link clicks
+  subscribersCount: number    // number of verified email subscribers
   email: string
   name?: string | null
   image?: string | null
@@ -173,7 +176,38 @@ export async function getUserLinksByPublicId(publicId: string): Promise<UserLink
   const doc = await db.collection<UserLinks>(COLLECTION).findOne({ publicId })
   return doc ?? null
 }
+export async function incrementProfileViews(publicId: string): Promise<void> {
+  const client = await clientPromise
+  const db = DB_NAME ? client.db(DB_NAME) : client.db()
+  await db.collection<UserLinks>(COLLECTION).updateOne(
+    { publicId },
+    { $inc: { views: 1 } }
+  )
+}
 
+export async function incrementLinkClicks(publicId: string, linkKey: string): Promise<void> {
+  const client = await clientPromise
+  const db = DB_NAME ? client.db(DB_NAME) : client.db()
+  // Increment total clicks
+  await db.collection<UserLinks>(COLLECTION).updateOne(
+    { publicId },
+    { $inc: { clicks: 1 } }
+  )
+  // Optionally track per‑link clicks in a subdocument
+  // await db.collection<UserLinks>(COLLECTION).updateOne(
+  //   { publicId },
+  //   { $inc: { [`linkClicks.${linkKey}`]: 1 } }
+  // )
+}
+
+export async function incrementProfileSubscribersCount(publicId: string): Promise<void> {
+  const client = await clientPromise
+  const db = DB_NAME ? client.db(DB_NAME) : client.db()
+  await db.collection<UserLinks>(COLLECTION).updateOne(
+    { publicId },
+    { $inc: { subscribersCount: 1 } }
+  )
+}
 export async function upsertUserLinksByEmail(args: {
   email: string
   name?: string | null

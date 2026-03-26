@@ -14,6 +14,10 @@ import {
 import { SiShopify } from 'react-icons/si';
 import { GrGlobe } from 'react-icons/gr';
 import PublicPageActions from '@/app/components/PublicPageActions';
+// New imports for tracking and subscription
+import ViewTracker from '@/app/components/ViewTracker';
+import SubscriptionButton from '@/app/components/SubscriptionButton';
+import LinkButton from '@/app/components/LinkButton';
 
 export async function generateMetadata({
   params,
@@ -86,57 +90,16 @@ function VerifiedBadge({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 
 /* ─── Social icon map ──────────────────────────────────────────────── */
 const SOCIALS = [
-  { key: 'instagram',  icon: FaInstagram,  label: 'Instagram',  gradient: 'from-[#f09433] via-[#e6683c] via-[#dc2743] via-[#cc2366] to-[#bc1888]' },
-  { key: 'youtube',   icon: FaYoutube,    label: 'YouTube',    gradient: 'from-[#FF0000] to-[#cc0000]' },
-  { key: 'linkedin',  icon: FaLinkedin,   label: 'LinkedIn',   gradient: 'from-[#0077B5] to-[#005fa3]' },
-  { key: 'facebook',  icon: FaFacebook,   label: 'Facebook',   gradient: 'from-[#1877F2] to-[#0c5fd8]' },
-  { key: 'x',         icon: FaTwitter,    label: 'X / Twitter',gradient: 'from-[#14171A] to-[#2b2b2b]' },
-  { key: 'pinterest', icon: FaPinterest,  label: 'Pinterest',  gradient: 'from-[#E60023] to-[#ad081b]' },
-  { key: 'shopify',   icon: SiShopify,    label: 'Shopify',    gradient: 'from-[#96bf48] to-[#5e8e3e]' },
-  { key: 'github',    icon: FaGithub,     label: 'GitHub',     gradient: 'from-[#24292e] to-[#444d56]' },
-  { key: 'website',   icon: GrGlobe,      label: 'Website',    gradient: 'from-[#6366f1] to-[#8b5cf6]' },
+  { key: 'instagram', icon: FaInstagram, label: 'Instagram', gradient: 'from-[#f09433] via-[#e6683c] via-[#dc2743] via-[#cc2366] to-[#bc1888]' },
+  { key: 'youtube', icon: FaYoutube, label: 'YouTube', gradient: 'from-[#FF0000] to-[#cc0000]' },
+  { key: 'linkedin', icon: FaLinkedin, label: 'LinkedIn', gradient: 'from-[#0077B5] to-[#005fa3]' },
+  { key: 'facebook', icon: FaFacebook, label: 'Facebook', gradient: 'from-[#1877F2] to-[#0c5fd8]' },
+  { key: 'x', icon: FaTwitter, label: 'X / Twitter', gradient: 'from-[#14171A] to-[#2b2b2b]' },
+  { key: 'pinterest', icon: FaPinterest, label: 'Pinterest', gradient: 'from-[#E60023] to-[#ad081b]' },
+  { key: 'shopify', icon: SiShopify, label: 'Shopify', gradient: 'from-[#96bf48] to-[#5e8e3e]' },
+  { key: 'github', icon: FaGithub, label: 'GitHub', gradient: 'from-[#24292e] to-[#444d56]' },
+  { key: 'website', icon: GrGlobe, label: 'Website', gradient: 'from-[#6366f1] to-[#8b5cf6]' },
 ];
-
-/* ─── Link Button ──────────────────────────────────────────────────── */
-function LinkButton({
-  href,
-  label,
-  IconComponent,
-  gradient,
-}: {
-  href: string;
-  label: string;
-  IconComponent?: React.ComponentType<{ className?: string }>;
-  gradient?: string;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="link-btn group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl px-5 py-4 text-sm font-semibold text-white transition-all duration-300"
-    >
-      {/* Glass base */}
-      <span className="link-btn-bg absolute inset-0 rounded-2xl" />
-      {/* Hover shimmer */}
-      <span className="link-btn-shimmer absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      {/* Icon pill */}
-      {IconComponent && (
-        <span
-          className={`link-btn-icon relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient ?? 'from-white/20 to-white/10'} shadow-lg`}
-        >
-          <IconComponent className="h-4 w-4 text-white" />
-        </span>
-      )}
-      {/* Label */}
-      <span className="relative z-10 flex-1 text-center text-[15px] font-semibold tracking-wide">{label}</span>
-      {/* Arrow */}
-      <span className="relative z-10 text-white/40 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-white/80">
-        →
-      </span>
-    </a>
-  );
-}
 
 /* ─── Page ─────────────────────────────────────────────────────────── */
 export default async function PublicLinksPage({
@@ -268,14 +231,15 @@ export default async function PublicLinksPage({
 
           {/* ── Links ── */}
           <div className="links-stack w-full space-y-3">
-            {SOCIALS.map(({ key, icon: Icon, label, gradient }) =>
+            {SOCIALS.map(({ key, label }) =>
               links[key] ? (
                 <LinkButton
                   key={key}
                   href={links[key]}
                   label={label}
-                  IconComponent={Icon}
-                  gradient={gradient}
+                  iconKey={key}
+                  profileId={profile.publicId}
+                  linkKey={key}
                 />
               ) : null
             )}
@@ -284,6 +248,8 @@ export default async function PublicLinksPage({
                 key={href}
                 href={href}
                 label={href.replace(/^https?:\/\//, '')}
+                profileId={profile.publicId}
+                linkKey={href}
               />
             ))}
           </div>
@@ -300,6 +266,10 @@ export default async function PublicLinksPage({
             </div>
             <PublicPageActions url={pageUrl} title={profile.name || undefined} />
           </div>
+
+          {/* ── NEW: View Tracker & Subscription Button ── */}
+          <ViewTracker profileId={profile.publicId} />
+          <SubscriptionButton profileId={profile.publicId} profileName={profile.name} />
 
           {/* ── Footer ── */}
           <footer className="mt-12 text-center">
