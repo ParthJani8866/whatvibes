@@ -10,7 +10,7 @@ export default function AuthButtons(props: { signedIn: boolean }) {
         className="rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white hover:bg-black/90"
         onClick={() => signIn('google', { callbackUrl: '/' })}
       >
-        Continue with Google
+        Get Started
       </button>
     )
   }
