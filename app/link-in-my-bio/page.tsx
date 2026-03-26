@@ -1,4 +1,4 @@
-﻿// lib/userLinks.ts
+// lib/userLinks.ts
 import clientPromise from '@/lib/mongodb'
 import { randomBytes } from 'crypto'
 
@@ -184,16 +184,34 @@ export async function upsertUserLinksByEmail(args: {
   bio?: string
   hobbies?: string[]
   categories?: string[]
+  publicId?: string  // <-- new optional field
 }) {
   const client = await clientPromise
   const db = DB_NAME ? client.db(DB_NAME) : client.db()
 
   const now = new Date()
-  const existing = await db
-    .collection<Pick<UserLinks, 'publicId'>>(COLLECTION)
-    .findOne({ email: args.email }, { projection: { publicId: 1 } })
+  let publicId = args.publicId
 
-  const publicId = existing?.publicId ?? randomBytes(12).toString('base64url')
+  if (!publicId) {
+    // No custom publicId provided: generate a random one
+    const existing = await db
+      .collection<Pick<UserLinks, 'publicId'>>(COLLECTION)
+      .findOne({ email: args.email }, { projection: { publicId: 1 } })
+    publicId = existing?.publicId ?? randomBytes(12).toString('base64url')
+  } else {
+    // Validate allowed characters
+    if (!/^[a-zA-Z0-9_-]+$/.test(publicId)) {
+      throw new Error('Public ID can only contain letters, numbers, hyphens, and underscores.')
+    }
+    // Check uniqueness (allow if it's the current user's own ID)
+    const available = await isPublicIdAvailable(publicId)
+    if (!available) {
+      const current = await db.collection<UserLinks>(COLLECTION).findOne({ email: args.email })
+      if (current?.publicId !== publicId) {
+        throw new Error('Public ID already taken.')
+      }
+    }
+  }
 
   await db.collection<UserLinks>(COLLECTION).updateOne(
     { email: args.email },
