@@ -15,13 +15,12 @@ import { GrGlobe } from 'react-icons/gr';
 interface LinkButtonProps {
   href: string;
   label: string;
-  iconKey?: string;  // e.g., 'instagram', 'youtube', etc.
-  gradient?: string;
+  iconKey?: string;
   profileId: string;
   linkKey: string;
 }
 
-// Map of icon keys to components
+// Map icon keys to components
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   instagram: FaInstagram,
   youtube: FaYoutube,
@@ -34,7 +33,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   website: GrGlobe,
 };
 
-// Optional: map gradient strings per key
+// Map icon keys to gradients
 const gradientMap: Record<string, string> = {
   instagram: 'from-[#f09433] via-[#e6683c] via-[#dc2743] via-[#cc2366] to-[#bc1888]',
   youtube: 'from-[#FF0000] to-[#cc0000]',
@@ -47,14 +46,52 @@ const gradientMap: Record<string, string> = {
   website: 'from-[#6366f1] to-[#8b5cf6]',
 };
 
+// Helper to turn stored handles/partial URLs into absolute URLs
+function normalizeStoredUrl(raw: string, platform: string): string {
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    return raw;
+  }
+  const handle = raw.trim().replace(/^@/, '');
+  switch (platform) {
+    case 'instagram':
+      return `https://instagram.com/${handle}`;
+    case 'youtube':
+      return `https://youtube.com/${handle.startsWith('@') ? handle : '@' + handle}`;
+    case 'linkedin':
+      if (handle.startsWith('in/') || handle.startsWith('company/')) {
+        return `https://linkedin.com/${handle}`;
+      }
+      return `https://linkedin.com/in/${handle}`;
+    case 'facebook':
+      return `https://facebook.com/${handle}`;
+    case 'x':
+      return `https://x.com/${handle}`;
+    case 'pinterest':
+      return `https://pinterest.com/${handle}`;
+    case 'github':
+      return `https://github.com/${handle}`;
+    case 'shopify':
+      if (!raw.includes('.')) {
+        return `https://${handle}.myshopify.com`;
+      }
+      return `https://${handle}`;
+    case 'website':
+    default:
+      return `https://${handle}`;
+  }
+}
+
 export default function LinkButton({
   href,
   label,
   iconKey,
-  gradient,
   profileId,
   linkKey,
 }: LinkButtonProps) {
+  const finalHref = iconKey ? normalizeStoredUrl(href, iconKey) : href;
+  const IconComponent = iconKey ? iconMap[iconKey] : undefined;
+  const gradient = iconKey ? gradientMap[iconKey] : 'from-white/20 to-white/10';
+
   const handleClick = async () => {
     try {
       await fetch(`/api/profile/${profileId}/click`, {
@@ -67,12 +104,9 @@ export default function LinkButton({
     }
   };
 
-  const IconComponent = iconKey ? iconMap[iconKey] : undefined;
-  const finalGradient = gradient || (iconKey ? gradientMap[iconKey] : 'from-white/20 to-white/10');
-
   return (
     <a
-      href={href}
+      href={finalHref}
       target="_blank"
       rel="noreferrer"
       onClick={handleClick}
@@ -82,7 +116,7 @@ export default function LinkButton({
       <span className="link-btn-shimmer absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       {IconComponent && (
         <span
-          className={`link-btn-icon relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${finalGradient} shadow-lg`}
+          className={`link-btn-icon relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} shadow-lg`}
         >
           <IconComponent className="h-4 w-4 text-white" />
         </span>
