@@ -1,0 +1,21 @@
+# LLMs.txt for bioforig.com
+
+User-agent: *
+Allow: /
+
+# Important pages
+Sitemap: https://bioforig.com/sitemap.xml
+
+# High-value content
+Content:
+https://bioforig.com/
+https://bioforig.com/link-in-my-bio/
+https://bioforig.com/about
+https://bioforig.com/contact
+
+# Permissions
+Allow-Training: yes
+Allow-Indexing: yes
+
+# Contact
+Contact: mailto:info@bioforig.com
