@@ -3,9 +3,9 @@ import { incrementLinkClicks } from '@/lib/userLinks'
 
 export async function POST(
   req: Request,
-  { params }: { params: { profileId: string } }
+  { params }: { params: Promise<{ profileId: string }> }  // note: params is a Promise
 ) {
-  const { profileId } = params
+  const { profileId } = await params
   const { link } = await req.json()
 
   try {

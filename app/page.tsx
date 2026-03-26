@@ -334,9 +334,9 @@ function Dashboard({
 }) {
   // Placeholder data – replace with real analytics from DB
   const stats = {
-    views: 1247,
-    clicks: 892,
-    emails: 43,
+    views: profile?.views ?? 0,
+    clicks: profile?.clicks ?? 0,
+    emails: profile?.subscribersCount ?? 0,
   }
 
   const backlinks = [
