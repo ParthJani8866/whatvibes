@@ -97,32 +97,55 @@ function MarketingPage() {
     <div className="space-y-20">
       {/* Hero */}
       <section className="relative overflow-hidden rounded-3xl border border-neutral-200 bg-white/80 p-8 shadow-xl backdrop-blur-sm">
-        <div className="relative z-10 max-w-2xl">
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl">
-            The #1 Link in Bio Tool
-          </h1>
-          <p className="mt-4 text-xl text-neutral-600">
-            Create a stunning page with all your links, grow your audience, and
-            track everything. Perfect for Instagram, TikTok, and more.
-          </p>
-          <div className="mt-8">
-            <AuthButtons signedIn={false} />
+        <div className="grid items-center gap-10 lg:grid-cols-2">
+
+          {/* LEFT: Video */}
+
+          {/* RIGHT: Content */}
+          <div className="relative z-10">
+            <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl">
+              The #1 Link in Bio Tool
+            </h1>
+
+            <p className="mt-4 text-xl text-neutral-600">
+              Create a stunning page with all your links, grow your audience, and
+              track everything. Perfect for Instagram, TikTok, and more.
+            </p>
+
+            <div className="mt-8">
+              <AuthButtons signedIn={false} />
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-4 text-sm text-neutral-500">
+              <div className="flex items-center gap-1">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                Free forever
+              </div>
+              <div className="flex items-center gap-1">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                No credit card
+              </div>
+              <div className="flex items-center gap-1">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                Google sign-in
+              </div>
+            </div>
           </div>
-          <div className="mt-6 flex flex-wrap gap-4 text-sm text-neutral-500">
-            <div className="flex items-center gap-1">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              Free forever
-            </div>
-            <div className="flex items-center gap-1">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              No credit card
-            </div>
-            <div className="flex items-center gap-1">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              Google sign-in
-            </div>
+
+          <div className="relative w-full overflow-hidden rounded-2xl border border-neutral-200 shadow-md">
+            <video
+              className="w-full h-full object-cover rounded-2xl"
+              autoPlay
+              loop
+              muted
+              playsInline
+            >
+              <source src="../demo.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
         </div>
+
         {/* Decorative blobs */}
         <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-gradient-to-br from-yellow-200 to-orange-200 opacity-50 blur-3xl" />
         <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-gradient-to-tr from-blue-200 to-indigo-200 opacity-50 blur-3xl" />
@@ -799,18 +822,19 @@ export default async function Page() {
                   Your all‑in‑one link‑in‑bio page
                 </p>
               </div>
+              
             </div>
             <div className="flex items-center gap-3">
-              {email ? (
-                <Link
-                  href="/subscribe"
-                  className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-50"
-                >
-                  Upgrade
-                </Link>
-              ) : null}
-              <AuthButtons signedIn={Boolean(email)} />
-            </div>
+                {email ? (
+                  <Link
+                    href="/subscribe"
+                    className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-50"
+                  >
+                    Upgrade
+                  </Link>
+                ) : null}
+                <AuthButtons signedIn={Boolean(email)} />
+              </div>
           </header>
 
           {!email ? <MarketingPage /> : <Dashboard session={session} profile={profile} links={links} />}
