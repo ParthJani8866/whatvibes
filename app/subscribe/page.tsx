@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation' // 👈 add this
 import GoogleSignInButton from '@/app/components/GoogleSignInButton'
 import { getAuthSession } from '@/lib/auth'
 import { getLatestBillingSubscriptionByEmail } from '@/lib/billingSubscriptions'
@@ -39,6 +40,11 @@ export default async function SubscribePage() {
   const existing = await getLatestBillingSubscriptionByEmail(email)
   const isActive = existing?.status === 'active' || existing?.status === 'authenticated'
 
+  // 👇 Redirect if already subscribed
+  if (isActive) {
+    redirect('/link-in-my-bio')
+  }
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-12">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -59,31 +65,16 @@ export default async function SubscribePage() {
         </Link>
       </div>
 
-      {existing ? (
-        <div className="mt-6 rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-800">
-          <div>
-            Current status:{' '}
-            <span className="font-semibold">
-              {existing.status} ({existing.planKey})
-            </span>
-          </div>
-          <div className="mt-1 text-neutral-600">
-            Razorpay subscription id:{' '}
-            <span className="font-mono">{existing.razorpaySubscriptionId}</span>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-6 rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-700">
-          No subscription found for this account yet.
-        </div>
-      )}
+      {/* You can keep the existing subscription info block, but it will never show because of the redirect */}
+      <div className="mt-6 rounded-2xl border border-neutral-200 bg-white px-5 py-4 text-sm text-neutral-700">
+        No active subscription found for this account. Choose a plan below.
+      </div>
 
       <PlansClient
         email={email}
         name={session?.user?.name ?? ''}
-        activeSubscriptionId={isActive ? existing?.razorpaySubscriptionId : null}
+        activeSubscriptionId={null} // No active subscription here
       />
     </main>
   )
 }
-
