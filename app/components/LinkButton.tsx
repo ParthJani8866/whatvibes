@@ -110,7 +110,7 @@ export default function LinkButton({
       target="_blank"
       rel="noreferrer"
       onClick={handleClick}
-      className="link-btn group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl px-5 py-4 text-sm font-semibold text-white transition-all duration-300"
+      className="link-btn group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl px-5 py-4 text-sm font-semibold transition-all duration-300"
     >
       <span className="link-btn-bg absolute inset-0 rounded-2xl" />
       <span className="link-btn-shimmer absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
