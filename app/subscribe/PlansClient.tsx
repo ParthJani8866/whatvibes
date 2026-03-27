@@ -2,6 +2,18 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  LayoutTemplate,
+  ShieldCheck,
+  Globe,
+  Search,
+  BarChart,
+  Mail,
+  CheckCircle,
+  ShoppingBag,
+  TrendingUp,
+  Headphones,
+} from 'lucide-react'
 
 type RazorpaySuccessResponse = {
   razorpay_payment_id: string
@@ -87,7 +99,7 @@ export default function PlansClient(props: {
       const rzp = new window.Razorpay({
         key: keyId,
         subscription_id: created.subscriptionId,
-        name: 'WhatVibes',
+        name: 'Bio For IG',
         description: 'Monthly subscription',
         prefill: { name: props.name, email: props.email },
         handler: async (response) => {
@@ -116,6 +128,14 @@ export default function PlansClient(props: {
 
   const disabled = Boolean(props.activeSubscriptionId)
 
+  // Helper to render a feature list item with an icon
+  const FeatureItem = ({ icon: Icon, text }: { icon: React.ElementType; text: string }) => (
+    <li className="flex items-start gap-2 text-sm text-neutral-700">
+      <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-neutral-500" />
+      <span>{text}</span>
+    </li>
+  )
+
   return (
     <div className="mt-8">
       {props.activeSubscriptionId ? (
@@ -130,40 +150,56 @@ export default function PlansClient(props: {
         </div>
       ) : null}
 
-      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Basic Plan */}
+        <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
           <div className="text-sm font-semibold text-neutral-600">Basic</div>
-          <div className="mt-2 text-3xl font-extrabold tracking-tight">INR 199</div>
-          <div className="mt-1 text-sm text-neutral-600">per month</div>
-          <ul className="mt-5 space-y-2 text-sm text-neutral-700">
-            <li>Premium templates</li>
-            <li>Custom domain support</li>
-            <li>Email support</li>
+          <div className="mt-2 flex items-baseline gap-1">
+            <span className="text-3xl font-extrabold tracking-tight">INR 425</span>
+            <span className="text-sm text-neutral-500">/ month</span>
+          </div>
+          <ul className="mt-6 space-y-3">
+            <FeatureItem icon={LayoutTemplate} text="Premium templates" />
+            <FeatureItem icon={ShieldCheck} text="Verified Badge" />
+            <FeatureItem icon={Globe} text="Custom domain support" />
+            <FeatureItem icon={Search} text="SEO for Google" />
+            <FeatureItem icon={BarChart} text="Page View & clicks analysis" />
+            <FeatureItem icon={Mail} text="Email subscriptions" />
           </ul>
           <button
             type="button"
             disabled={disabled || loadingPlan !== null}
             onClick={() => onSubscribe('basic')}
-            className="mt-6 w-full rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-neutral-300"
+            className="mt-8 w-full rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             {loadingPlan === 'basic' ? 'Opening checkout...' : 'Subscribe monthly'}
           </button>
         </div>
 
-        <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
+        {/* Pro Plan */}
+        <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
           <div className="text-sm font-semibold text-neutral-600">Pro</div>
-          <div className="mt-2 text-3xl font-extrabold tracking-tight">INR 499</div>
-          <div className="mt-1 text-sm text-neutral-600">per month</div>
-          <ul className="mt-5 space-y-2 text-sm text-neutral-700">
-            <li>Everything in Basic</li>
-            <li>Advanced analytics</li>
-            <li>Priority support</li>
+          <div className="mt-2 flex items-baseline gap-1">
+            <span className="text-3xl font-extrabold tracking-tight">INR 849</span>
+            <span className="text-sm text-neutral-500">/ month</span>
+          </div>
+          <ul className="mt-6 space-y-3">
+            <FeatureItem icon={LayoutTemplate} text="Premium templates" />
+            <FeatureItem icon={ShieldCheck} text="Verified Badge" />
+            <FeatureItem icon={Globe} text="Custom domain support" />
+            <FeatureItem icon={Search} text="SEO for Google" />
+            <FeatureItem icon={BarChart} text="Page View & clicks analysis" />
+            <FeatureItem icon={Mail} text="Email subscriptions" />
+            <FeatureItem icon={ShoppingBag} text="Ecommerce Listings" />
+            <FeatureItem icon={Search} text="2 Backlinks for better visibility in google" />
+            <FeatureItem icon={TrendingUp} text="Advanced analytics" />
+            <FeatureItem icon={Headphones} text="Priority support" />
           </ul>
           <button
             type="button"
             disabled={disabled || loadingPlan !== null}
             onClick={() => onSubscribe('pro')}
-            className="mt-6 w-full rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-neutral-300"
+            className="mt-8 w-full rounded-2xl bg-black px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-black/90 disabled:cursor-not-allowed disabled:bg-neutral-300"
           >
             {loadingPlan === 'pro' ? 'Opening checkout...' : 'Subscribe monthly'}
           </button>

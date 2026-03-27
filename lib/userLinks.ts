@@ -218,6 +218,7 @@ export async function upsertUserLinksByEmail(args: {
   bio?: string
   hobbies?: string[]
   categories?: string[]
+  publicId: string 
 }) {
   const client = await clientPromise
   const db = DB_NAME ? client.db(DB_NAME) : client.db()
