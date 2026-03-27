@@ -44,10 +44,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 /* ─── Verified Badge ─── */
 function VerifiedBadge() {
   return (
-    <span className="inline-flex items-center justify-center ml-1">
-      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 shadow-sm">
-        <FaCheckCircle className="w-3.5 h-3.5 text-white" />
-      </span>
+    <span className="inline-flex items-center ml-1">
+      <FaCheckCircle className="w-3.5 h-3.5 text-[#1DA1F2]" />
     </span>
   );
 }
@@ -82,8 +80,8 @@ export default async function PublicLinksPage({ params }: { params: Promise<{ id
       <style>{STYLES}</style>
 
       <main className="page-root">
-        <div className="mx-auto max-w-md px-4 py-10">
-          <div className="bg-white rounded-3xl border border-neutral-200 shadow-sm p-6">
+        <div className="mx-auto max-w-md px-2 py-4">
+          <div className="bg-white rounded-3xl border border-neutral-200 shadow-sm p-2">
 
             {/* ─── Facebook Style Header ─── */}
             <div className="mb-10">
@@ -130,7 +128,7 @@ export default async function PublicLinksPage({ params }: { params: Promise<{ id
                     {profile.hobbies.map((hobby: string) => (
                       <span
                         key={hobby}
-                        className="px-3 py-1 text-xs bg-neutral-100 text-neutral-700 rounded-full border border-neutral-200"
+                        className="px-3 py-1 text-xs font-medium rounded-full bg-black text-white hover:bg-neutral-800 transition"
                       >
                         {hobby}
                       </span>
@@ -144,7 +142,7 @@ export default async function PublicLinksPage({ params }: { params: Promise<{ id
                     {profile.categories.map((cat: string) => (
                       <span
                         key={cat}
-                        className="px-3 py-1 text-xs bg-neutral-100 text-neutral-700 rounded-full border border-neutral-200"
+                        className="flex items-center gap-1 px-3 py-1 text-xs font-medium bg-neutral-100 text-neutral-700 rounded-full border border-neutral-200 hover:bg-neutral-200 transition"
                       >
                         {cat}
                       </span>
