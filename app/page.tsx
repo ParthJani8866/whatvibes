@@ -800,7 +800,17 @@ export default async function Page() {
                 </p>
               </div>
             </div>
-            <AuthButtons signedIn={Boolean(email)} />
+            <div className="flex items-center gap-3">
+              {email ? (
+                <Link
+                  href="/subscribe"
+                  className="rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-neutral-50"
+                >
+                  Upgrade
+                </Link>
+              ) : null}
+              <AuthButtons signedIn={Boolean(email)} />
+            </div>
           </header>
 
           {!email ? <MarketingPage /> : <Dashboard session={session} profile={profile} links={links} />}

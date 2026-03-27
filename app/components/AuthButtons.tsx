@@ -8,7 +8,7 @@ export default function AuthButtons(props: { signedIn: boolean }) {
       <button
         type="button"
         className="rounded-xl bg-black px-5 py-3 text-sm font-semibold text-white hover:bg-black/90"
-        onClick={() => signIn('google', { callbackUrl: '/' })}
+        onClick={() => signIn('google', { callbackUrl: '/subscribe' })}
       >
         Get Started
       </button>
@@ -25,4 +25,3 @@ export default function AuthButtons(props: { signedIn: boolean }) {
     </button>
   )
 }
-
