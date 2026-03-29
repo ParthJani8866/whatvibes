@@ -12,6 +12,8 @@ https://bioforig.com/
 https://bioforig.com/link-in-my-bio/
 https://bioforig.com/about
 https://bioforig.com/contact
+https://bioforig.com/terms-of-service
+https://bioforig.com/privacy-policy
 
 # Permissions
 Allow-Training: yes
