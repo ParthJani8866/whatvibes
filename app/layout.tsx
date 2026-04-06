@@ -26,6 +26,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="canonical" href="https://bioforig.com" />
+        
         <meta
           name="google-site-verification"
           content="E0_UBnY8hLEbEq4LdXqMEIeM5CACikQtSVyAW3sKEuQ"
