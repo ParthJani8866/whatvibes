@@ -20,5 +20,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/contact`,
       lastModified: new Date(),
     },
+    {
+      url: `${baseUrl}/terms-of-service`,
+      lastModified: new Date(),
+    },
+    {
+      url: `${baseUrl}/privacy-policy`,
+      lastModified: new Date(),
+    },
   ]
 }
