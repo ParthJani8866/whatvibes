@@ -7,10 +7,25 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'platform-lookaside.fbsbx.com' },
     ],
   },
+
   typescript: {
-    // Codex sandbox blocks child processes with IPC; Next's type checker uses IPC workers.
-    // We still run `tsc --noEmit` separately when validating changes.
     ignoreBuildErrors: true,
+  },
+
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.bioforig.com', // redirect FROM this
+          },
+        ],
+        destination: 'https://bioforig.com/:path*', // TO this
+        permanent: true,
+      },
+    ];
   },
 };
 
