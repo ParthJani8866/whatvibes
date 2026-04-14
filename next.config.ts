@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+﻿import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
 
   typescript: {
     ignoreBuildErrors: true,
+  },
+
+  experimental: {
+    // Helps on environments where spawning extra Node processes is restricted.
+    workerThreads: true,
+    cpus: 1,
   },
 
   async redirects() {

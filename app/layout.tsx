@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import Script from "next/script";
@@ -10,12 +10,16 @@ const satoshi = localFont({
     { path: "./Fonts/WEB/fonts/Satoshi-Bold.woff2", weight: "700" },
   ],
   variable: "--font-satoshi",
-})
-
+});
 
 export const metadata: Metadata = {
-  title: "Dream House Sale",
-  description: "Dream House Sale",
+  metadataBase: new URL("https://bioforig.com"),
+  title: {
+    default: "Bio For IG",
+    template: "%s | Bio For IG",
+  },
+  description:
+    "Bio For IG: link in bio tool + free Instagram growth tools (fonts, usernames, bios, captions, hashtags, and SEO keywords).",
 };
 
 export default function RootLayout({
@@ -26,8 +30,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="canonical" href="https://bioforig.com" />
-        
         <meta
           name="google-site-verification"
           content="E0_UBnY8hLEbEq4LdXqMEIeM5CACikQtSVyAW3sKEuQ"
@@ -46,9 +48,7 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body
-        className={`${satoshi.variable} font-sans bg-slate-50 text-slate-900`}
-      >
+      <body className={`${satoshi.variable} font-sans bg-slate-50 text-slate-900`}>
         {children}
       </body>
     </html>

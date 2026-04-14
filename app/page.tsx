@@ -1,4 +1,4 @@
-// app/page.tsx
+﻿// app/page.tsx
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import Image from 'next/image'
@@ -51,14 +51,14 @@ export const metadata = {
     'Bio For IG',
   ],
   openGraph: {
-    title: 'Bio For IG – The Ultimate Link in Bio Tool',
+    title: 'Bio For IG â€“ The Ultimate Link in Bio Tool',
     description:
-      'Create your own beautiful link‑in‑bio page. Add all your social links, customise your profile, and share it everywhere.',
+      'Create your own beautiful linkâ€‘inâ€‘bio page. Add all your social links, customise your profile, and share it everywhere.',
     type: 'website',
     siteName: 'Bio For IG',
     images: [
       {
-        url: '/og-image.png',
+        url: '/opengraph-image',
         width: 1200,
         height: 630,
         alt: 'Bio For IG Link in Bio Preview',
@@ -67,10 +67,10 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Bio For IG – Link in Bio Tool',
+    title: 'Bio For IG â€“ Link in Bio Tool',
     description:
-      'Create your own beautiful link‑in‑bio page. Free, fast, and easy. Sign in with Google.',
-    images: ['/og-image.png'],
+      'Create your own beautiful linkâ€‘inâ€‘bio page. Free, fast, and easy. Sign in with Google.',
+    images: ['/opengraph-image'],
   },
   robots: {
     index: true,
@@ -157,7 +157,7 @@ function MarketingPage() {
         {[
           {
             icon: <BarChart3 className="h-8 w-8" />,
-            title: 'Real‑time Analytics',
+            title: 'Realâ€‘time Analytics',
             desc: 'Track views, clicks, and engagement for every link. Know what your audience loves.',
           },
           {
@@ -172,7 +172,7 @@ function MarketingPage() {
           },
           {
             icon: <Link2 className="h-8 w-8" />,
-            title: '2 High‑Quality Backlinks',
+            title: '2 Highâ€‘Quality Backlinks',
             desc: 'Boost your SEO with backlinks from our trusted network. Your page automatically gains authority.',
           },
           {
@@ -205,33 +205,33 @@ function MarketingPage() {
         <div className="space-y-12">
           <Benefit
             icon={<BarChart3 className="h-12 w-12" />}
-            title="On‑Page SEO & Dashboard Analytics"
+            title="Onâ€‘Page SEO & Dashboard Analytics"
             desc="Your page is fully optimised for search engines. See exactly how many people visit, which links they click, and when they engage. Our dashboard shows you the metrics that matter: total views, unique visitors, top links, and even geographic data (coming soon). Use these insights to refine your content and grow faster."
           />
           <Benefit
             icon={<Mail className="h-12 w-12" />}
             title="Email Subscriptions & Contact Downloads"
-            desc="Turn visitors into subscribers. Add a simple email signup form to your page – we’ll collect emails for you. Then, download your contact list as CSV with one click. Build your audience while you sleep."
+            desc="Turn visitors into subscribers. Add a simple email signup form to your page â€“ weâ€™ll collect emails for you. Then, download your contact list as CSV with one click. Build your audience while you sleep."
           />
           <Benefit
             icon={<QrCode className="h-12 w-12" />}
             title="QR Code for Your Link"
-            desc="Every page gets a dynamic QR code. Place it on business cards, flyers, or your store window. When scanned, it takes people straight to your link page – no typing, no errors. Great for offline marketing."
+            desc="Every page gets a dynamic QR code. Place it on business cards, flyers, or your store window. When scanned, it takes people straight to your link page â€“ no typing, no errors. Great for offline marketing."
           />
           <Benefit
             icon={<Link2 className="h-12 w-12" />}
             title="2 Quality Backlinks for Your Page"
-            desc="We automatically add two authoritative backlinks from our partner network to your page. This boosts your domain authority and helps you rank higher on Google. It’s like having a built‑in SEO boost."
+            desc="We automatically add two authoritative backlinks from our partner network to your page. This boosts your domain authority and helps you rank higher on Google. Itâ€™s like having a builtâ€‘in SEO boost."
           />
           <Benefit
             icon={<TrendingUp className="h-12 w-12" />}
             title="Boost Instagram, YouTube & Facebook Visibility"
-            desc="Our link‑in‑bio page is designed to work with social media algorithms. By providing a clean, fast, and engaging experience, you keep users on your content longer. Plus, you can track which platform sends the most traffic, so you know where to focus your efforts."
+            desc="Our linkâ€‘inâ€‘bio page is designed to work with social media algorithms. By providing a clean, fast, and engaging experience, you keep users on your content longer. Plus, you can track which platform sends the most traffic, so you know where to focus your efforts."
           />
           <Benefit
             icon={<Rocket className="h-12 w-12" />}
             title="How This Helps You Compete"
-            desc="In a crowded digital space, every advantage counts. With Bio For IG, you're not just listing links – you're building a professional hub that showcases your brand. Analytics help you double down on what works. Email capture builds a direct line to your fans. Backlinks boost your SEO. And the QR code bridges offline and online. Together, these tools give you the edge to stand out and grow faster than competitors."
+            desc="In a crowded digital space, every advantage counts. With Bio For IG, you're not just listing links â€“ you're building a professional hub that showcases your brand. Analytics help you double down on what works. Email capture builds a direct line to your fans. Backlinks boost your SEO. And the QR code bridges offline and online. Together, these tools give you the edge to stand out and grow faster than competitors."
           />
         </div>
       </section>
@@ -249,7 +249,7 @@ function MarketingPage() {
             {
               step: '2',
               title: 'Add Your Links',
-              desc: 'Paste your social media URLs. YouTube, Instagram, TikTok, custom links – all supported.',
+              desc: 'Paste your social media URLs. YouTube, Instagram, TikTok, custom links â€“ all supported.',
             },
             {
               step: '3',
@@ -277,7 +277,7 @@ function MarketingPage() {
         <div className="mx-auto max-w-3xl space-y-4">
           <FaqItem
             question="Is it really free?"
-            answer="Yes! Bio For IG is completely free. No credit card required. All core features – unlimited links, analytics, QR code, and email capture – are included. We may add premium features in the future, but the basics will always be free."
+            answer="Yes! Bio For IG is completely free. No credit card required. All core features â€“ unlimited links, analytics, QR code, and email capture â€“ are included. We may add premium features in the future, but the basics will always be free."
           />
           <FaqItem
             question="How do I add links?"
@@ -289,16 +289,49 @@ function MarketingPage() {
           />
           <FaqItem
             question="How do I get the QR code?"
-            answer="Once you're signed in, your page automatically has a QR code displayed in your dashboard. You can download it as an image and print it anywhere. It's dynamic – if you update your links, the QR code still works."
+            answer="Once you're signed in, your page automatically has a QR code displayed in your dashboard. You can download it as an image and print it anywhere. It's dynamic â€“ if you update your links, the QR code still works."
           />
           <FaqItem
             question="What are the backlinks and why do I need them?"
-            answer="Backlinks are links from other websites to yours. They are a major factor in Google rankings. We provide two backlinks from high‑authority domains in our network, giving your page an SEO boost. You don't have to do anything – they're added automatically."
+            answer="Backlinks are links from other websites to yours. They are a major factor in Google rankings. We provide two backlinks from highâ€‘authority domains in our network, giving your page an SEO boost. You don't have to do anything â€“ they're added automatically."
           />
           <FaqItem
             question="Will this help me on Instagram / YouTube / TikTok?"
-            answer="Absolutely. Instagram only allows one link in your bio – make it count. With our page, you can direct your audience to all your content at once. And because the page is mobile‑optimised and fast, it keeps users engaged, which algorithms love."
+            answer="Absolutely. Instagram only allows one link in your bio â€“ make it count. With our page, you can direct your audience to all your content at once. And because the page is mobileâ€‘optimised and fast, it keeps users engaged, which algorithms love."
           />
+        </div>
+      </section>
+      {/* Free Instagram Tools */}
+      <section className="rounded-3xl border border-neutral-200 bg-white/80 p-8 shadow-xl backdrop-blur-sm">
+        <h2 className="text-3xl font-bold">Explore our free Instagram tools</h2>
+        <p className="mt-2 text-neutral-600">
+          Fonts, usernames, bios, hashtags, captions, and 3,000+ SEO keywords — all interlinked for faster indexing.
+        </p>
+        <div className="mt-6 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <Link href="/instagram-fonts-generator" className="rounded-2xl border border-neutral-200 bg-white p-5 hover:bg-neutral-50">
+            <div className="text-lg font-extrabold">Instagram Fonts Generator</div>
+            <div className="mt-1 text-sm text-neutral-600">Copy/paste stylish fonts and symbols.</div>
+          </Link>
+          <Link href="/instagram-username-generator" className="rounded-2xl border border-neutral-200 bg-white p-5 hover:bg-neutral-50">
+            <div className="text-lg font-extrabold">Instagram Username Generator</div>
+            <div className="mt-1 text-sm text-neutral-600">Unique + aesthetic username ideas.</div>
+          </Link>
+          <Link href="/instagram-bio-generator" className="rounded-2xl border border-neutral-200 bg-white p-5 hover:bg-neutral-50">
+            <div className="text-lg font-extrabold">Instagram Bio Generator</div>
+            <div className="mt-1 text-sm text-neutral-600">Bios with niche + CTA (copy/paste).</div>
+          </Link>
+          <Link href="/instagram-hashtags-generator" className="rounded-2xl border border-neutral-200 bg-white p-5 hover:bg-neutral-50">
+            <div className="text-lg font-extrabold">Instagram Hashtags Generator</div>
+            <div className="mt-1 text-sm text-neutral-600">Hashtag packs for reels and growth.</div>
+          </Link>
+          <Link href="/instagram-captions-for-boys" className="rounded-2xl border border-neutral-200 bg-white p-5 hover:bg-neutral-50">
+            <div className="text-lg font-extrabold">Instagram Captions</div>
+            <div className="mt-1 text-sm text-neutral-600">Captions for boys & girls + reels hooks.</div>
+          </Link>
+          <Link href="/instagram-keywords" className="rounded-2xl border border-neutral-200 bg-white p-5 hover:bg-neutral-50">
+            <div className="text-lg font-extrabold">Instagram SEO Keywords</div>
+            <div className="mt-1 text-sm text-neutral-600">Browse 3,000+ keyword pages.</div>
+          </Link>
         </div>
       </section>
 
@@ -356,7 +389,7 @@ function Dashboard({
   profile: any
   links: any
 }) {
-  // Placeholder data – replace with real analytics from DB
+  // Placeholder data â€“ replace with real analytics from DB
   const stats = {
     views: profile?.views ?? 0,
     clicks: profile?.clicks ?? 0,
@@ -640,7 +673,7 @@ function Dashboard({
               ))}
               {Object.values(links).filter(Boolean).length === 0 && (
                 <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-center text-sm text-neutral-600">
-                  Add links on the left to see your beautiful link‑in‑bio page.
+                  Add links on the left to see your beautiful linkâ€‘inâ€‘bio page.
                 </div>
               )}
             </div>
@@ -691,7 +724,7 @@ function Dashboard({
                 <QRCodeSVG value={pageUrl} size={128} />
               </div>
               <p className="mt-2 text-xs text-neutral-500">
-                Scan to visit your page. Right‑click to save.
+                Scan to visit your page. Rightâ€‘click to save.
               </p>
             </div>
           )}
@@ -726,10 +759,10 @@ function Dashboard({
               <TrendingUp className="h-5 w-5" /> Boost Your Social Visibility
             </h3>
             <ul className="mt-2 space-y-1 text-sm text-neutral-700">
-              <li>✅ Use your QR code on business cards and flyers.</li>
-              <li>✅ Add your link to your Instagram bio, YouTube channel, and TikTok profile.</li>
-              <li>✅ Share your page in stories with a "link in bio" sticker.</li>
-              <li>✅ Ask followers to save your page as a shortcut on their phone.</li>
+              <li>âœ… Use your QR code on business cards and flyers.</li>
+              <li>âœ… Add your link to your Instagram bio, YouTube channel, and TikTok profile.</li>
+              <li>âœ… Share your page in stories with a "link in bio" sticker.</li>
+              <li>âœ… Ask followers to save your page as a shortcut on their phone.</li>
             </ul>
           </div>
         </section>
@@ -763,7 +796,7 @@ async function saveLinksAction(formData: FormData) {
     name: session.user?.name ?? null,
     image: session.user?.image ?? null,
     links: nextLinks,
-    // Note: we're not updating banner, bio, etc. here – those are handled by the profile page
+    // Note: we're not updating banner, bio, etc. here â€“ those are handled by the profile page
   })
 
   revalidatePath('/')
@@ -820,7 +853,7 @@ export default async function Page() {
                   Bio For IG
                 </h1>
                 <p className="text-sm text-neutral-600">
-                  Your all‑in‑one link‑in‑bio page
+                  Your all in one link in bio tool for Instagram, Free forever.
                 </p>
               </div>
               
@@ -846,4 +879,7 @@ export default async function Page() {
     </>
   )
 }
+
+
+
 

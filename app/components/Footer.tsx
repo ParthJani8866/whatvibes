@@ -1,10 +1,18 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 
 const footerLinks = [
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
   { href: '/terms-of-service', label: 'Terms of Service' },
   { href: '/privacy-policy', label: 'Privacy Policy' },
+]
+
+const toolLinks = [
+  { href: '/instagram-bio-generator', label: 'Bio Generator' },
+  { href: '/instagram-fonts-generator', label: 'Fonts Generator' },
+  { href: '/instagram-username-generator', label: 'Username Generator' },
+  { href: '/instagram-hashtags-generator', label: 'Hashtags Generator' },
+  { href: '/instagram-keywords', label: 'SEO Keywords' },
 ]
 
 export function Footer() {
@@ -16,6 +24,21 @@ export function Footer() {
         for Instagram, TikTok, and more. Create your own bio page with all your
         social links. Free, fast, and easy.
       </p>
+
+      <nav
+        aria-label="Tools"
+        className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
+      >
+        {toolLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="transition-colors hover:text-neutral-800"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </nav>
 
       <nav
         aria-label="Footer"
@@ -42,9 +65,7 @@ export function Footer() {
         </a>
       </p>
 
-      <p className="mt-2">
-        &copy; {new Date().getFullYear()} Bio For IG. All rights reserved.
-      </p>
+      <p className="mt-2">&copy; {new Date().getFullYear()} Bio For IG. All rights reserved.</p>
     </footer>
   )
 }

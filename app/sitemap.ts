@@ -1,32 +1,29 @@
-import { MetadataRoute } from 'next'
+﻿import { MetadataRoute } from 'next'
+
+import {
+  getInstagramKeywordEntries,
+  instagramKeywordBrowseGroups,
+  instagramToolRoutes,
+} from '@/lib/instagramSeo'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://bioforig.com'
+  const now = new Date()
 
-  return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-    },
-    {
-      url: `${baseUrl}/link-in-my-bio`,
-      lastModified: new Date(),
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-    },
-    {
-      url: `${baseUrl}/contact`,
-      lastModified: new Date(),
-    },
-    {
-      url: `${baseUrl}/terms-of-service`,
-      lastModified: new Date(),
-    },
-    {
-      url: `${baseUrl}/privacy-policy`,
-      lastModified: new Date(),
-    },
-  ]
+  const routes = new Set<string>([
+    '/',
+    '/link-in-my-bio',
+    '/about',
+    '/contact',
+    '/terms-of-service',
+    '/privacy-policy',
+    ...instagramToolRoutes,
+    ...instagramKeywordBrowseGroups.map((g) => `/instagram-keywords/browse/${g}`),
+    ...getInstagramKeywordEntries().map((e) => `/instagram-keywords/${e.slug}`),
+  ])
+
+  return Array.from(routes).map((path) => ({
+    url: path === '/' ? baseUrl : `${baseUrl}${path}`,
+    lastModified: now,
+  }))
 }
