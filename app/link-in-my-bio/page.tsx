@@ -1,12 +1,28 @@
 // app/link-in-my-bio/page.tsx
-import { redirect } from 'next/navigation'
-import { getAuthSession } from '@/lib/auth'
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
-  getUserLinksByEmail,
-  upsertUserLinksByEmail,
-  isPublicIdAvailable,
-} from '@/lib/userLinks'
-import AuthButtons from '@/app/components/AuthButtons'
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+// Import icons from lucide-react (only available ones)
 import {
   Camera,
   User,
@@ -15,862 +31,856 @@ import {
   Heart,
   ShoppingBag,
   Globe,
-  ArrowRight,
-  X,
+  Plus,
+  Trash2,
+  GripVertical,
+  Save,
+  Check,
+  AlertCircle,
+  Loader2,
+  Link2,
+  Music,
+  Video,
+  MessageCircle,
+  Pin,
+  Share2,
 } from 'lucide-react'
-import {
-  FaInstagramSquare,
-  FaYoutubeSquare,
-  FaLinkedin,
-  FaFacebookSquare,
-  FaTwitterSquare,
-  FaPinterest,
-  FaGithub,
-} from 'react-icons/fa'
-import Link from 'next/link'
-import fs from 'fs'
-import path from 'path'
 
-export const metadata = {
-  title: 'Complete Your Profile | Bio For IG',
-  description:
-    'Set up your link-in-bio page with your banner, bio, hobbies, and all your social links.',
+// Import social icons from react-icons
+import { FaInstagram, FaYoutube, FaLinkedin, FaFacebook, FaGithub, FaPinterest, FaTiktok, FaTwitch, FaDiscord } from 'react-icons/fa'
+
+// Type definitions
+type SocialPlatform = {
+  id: string
+  name: string
+  icon: React.ReactNode
+  placeholder: string
+  color: string
+  enabled: boolean
+  value: string
 }
 
-async function saveFile(file: File, prefix: string): Promise<string | null> {
-  if (!file || file.size === 0) return null
-  const bytes = await file.arrayBuffer()
-  const buffer = Buffer.from(bytes)
-  const ext = file.name.split('.').pop() || 'jpg'
-  const filename = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
-  fs.writeFileSync(path.join(uploadDir, filename), buffer)
-  return `/uploads/${filename}`
+type CustomLink = {
+  id: string
+  title: string
+  url: string
+  icon: string
 }
 
-export default async function CompleteProfilePage({
-  searchParams,
+type ProfileData = {
+  publicId: string
+  banner: string
+  profilePic: string
+  bio: string
+  hobbies: string[]
+  categories: string[]
+  socials: SocialPlatform[]
+  customLinks: CustomLink[]
+}
+
+// Sortable social link item
+function SortableSocialItem({
+  platform,
+  onUpdate,
+  onToggle,
+  onRemove,
 }: {
-  searchParams: { edit?: string; error?: string; taken?: string }
+  platform: SocialPlatform
+  onUpdate: (id: string, value: string) => void
+  onToggle: (id: string) => void
+  onRemove: (id: string) => void
 }) {
-  const session = await getAuthSession()
-  const email = session?.user?.email
-  if (!email) redirect('/')
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: platform.id })
 
-  const existingProfile = await getUserLinksByEmail(email)
-  const isEditing = searchParams.edit === 'true'
-
-  if (!isEditing && existingProfile?.bio) redirect('/')
-
-  const error = searchParams.error
-  const takenId = searchParams.taken
-
-  async function saveProfile(formData: FormData) {
-    'use server'
-    const session = await getAuthSession()
-    const email = session?.user?.email
-    if (!email) throw new Error('Unauthorized')
-
-    const publicId = String(formData.get('publicId') ?? '').trim()
-    if (!publicId)
-      return redirect('/link-in-my-bio?edit=' + (isEditing ? 'true' : '') + '&error=required')
-    if (!/^[a-zA-Z0-9_-]+$/.test(publicId))
-      return redirect('/link-in-my-bio?edit=' + (isEditing ? 'true' : '') + '&error=invalid')
-
-    const available = await isPublicIdAvailable(publicId)
-    if (!available) {
-      const current = await getUserLinksByEmail(email)
-      if (current?.publicId !== publicId)
-        return redirect(
-          '/link-in-my-bio?edit=' +
-          (isEditing ? 'true' : '') +
-          '&error=taken&taken=' +
-          encodeURIComponent(publicId)
-        )
-    }
-
-    const bannerUrl = String(formData.get('banner') ?? '')
-    const profilePicUrl = String(formData.get('profilePic') ?? '')
-    const bio = String(formData.get('bio') ?? '')
-    const hobbies = String(formData.get('hobbies') ?? '')
-    const categories = String(formData.get('categories') ?? '')
-    const bannerFile = formData.get('bannerFile') as File | null
-    const profilePicFile = formData.get('profilePicFile') as File | null
-
-    let finalBanner = bannerUrl
-    let finalProfilePic = profilePicUrl
-    if (bannerFile && bannerFile.size > 0) {
-      const saved = await saveFile(bannerFile, 'banner')
-      if (saved) finalBanner = saved
-    }
-    if (profilePicFile && profilePicFile.size > 0) {
-      const saved = await saveFile(profilePicFile, 'avatar')
-      if (saved) finalProfilePic = saved
-    }
-
-    const hobbiesArray = hobbies.split(',').map((h) => h.trim()).filter(Boolean)
-    const categoriesArray = categories.split(',').map((c) => c.trim()).filter(Boolean)
-    const existing = await getUserLinksByEmail(email)
-    const existingLinks = existing?.links ?? {}
-
-    const nextLinks = {
-      ...existingLinks,
-      pinterest: String(formData.get('pinterest') ?? ''),
-      shopify: String(formData.get('shopify') ?? ''),
-      github: String(formData.get('github') ?? ''),
-      website: String(formData.get('website') ?? ''),
-      youtube: String(formData.get('youtube') ?? existingLinks.youtube ?? ''),
-      instagram: String(formData.get('instagram') ?? existingLinks.instagram ?? ''),
-      linkedin: String(formData.get('linkedin') ?? existingLinks.linkedin ?? ''),
-      facebook: String(formData.get('facebook') ?? existingLinks.facebook ?? ''),
-      x: String(formData.get('x') ?? existingLinks.x ?? ''),
-    }
-
-    await upsertUserLinksByEmail({
-      email,
-      name: session.user?.name ?? null,
-      image: session.user?.image ?? null,
-      links: nextLinks,
-      banner: finalBanner,
-      profilePic: finalProfilePic,
-      bio,
-      hobbies: hobbiesArray,
-      categories: categoriesArray,
-      publicId,
-    })
-
-    redirect('/')
-  }
-
-  const existingLinks = existingProfile?.links ?? {}
-  const prefill = {
-    publicId: existingProfile?.publicId ?? '',
-    banner: existingProfile?.banner ?? '',
-    profilePic: existingProfile?.profilePic ?? session.user?.image ?? '',
-    bio: existingProfile?.bio ?? '',
-    hobbies: existingProfile?.hobbies ? (existingProfile.hobbies as string[]).join(', ') : '',
-    categories: existingProfile?.categories ? (existingProfile.categories as string[]).join(', ') : '',
-    instagram: existingLinks.instagram ?? '',
-    youtube: existingLinks.youtube ?? '',
-    linkedin: existingLinks.linkedin ?? '',
-    facebook: existingLinks.facebook ?? '',
-    x: existingLinks.x ?? '',
-    pinterest: existingLinks.pinterest ?? '',
-    shopify: existingLinks.shopify ?? '',
-    github: existingLinks.github ?? '',
-    website: existingLinks.website ?? '',
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
   }
 
   return (
-    <>
-      <style>{PAGE_STYLES}</style>
-      <main className="page-root">
-        <div className="page-content">
-          {/* ── Header ── */}
-          <header className="mb-12 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-black to-neutral-800 text-white shadow-md">
-                WV
-              </div>
-              <div>
-                <h1 className="text-2xl font-extrabold tracking-tight">
-                  Bio For IG
-                </h1>
-                <p className="text-sm text-neutral-600">
-                  Your all‑in‑one link‑in‑bio page
-                </p>
-              </div>
-            </div>
-            <AuthButtons signedIn={Boolean(email)} />
-          </header>
-
-          {/* ── Form card ── */}
-          <div className="form-card">
-            <div className="card-inner">
-              {/* Title */}
-              <div className="form-title-block">
-                <div className="form-step-badge">
-                  {isEditing ? 'Edit Mode' : 'Step 1 of 1'}
-                </div>
-                <h2 className="form-title">
-                  {isEditing ? 'Edit Your Profile' : 'Complete Your Profile'}
-                </h2>
-                <p className="form-subtitle">
-                  {isEditing
-                    ? 'Update your banner, bio, and social links below.'
-                    : 'Customize your link-in-bio page to make it uniquely yours.'}
-                </p>
-              </div>
-
-              {/* Error banner */}
-              {error && (
-                <div className="error-banner">
-                  <span className="error-icon">⚠</span>
-                  <span>
-                    {error === 'required' && 'Please choose a public username.'}
-                    {error === 'invalid' &&
-                      'Username can only contain letters, numbers, hyphens, and underscores.'}
-                    {error === 'taken' &&
-                      `"${takenId}" is already taken. Please choose another username.`}
-                  </span>
-                </div>
-              )}
-
-              <form action={saveProfile} className="profile-form" >
-
-                {/* ── Section: Identity ── */}
-                <div className="form-section">
-                  <div className="section-label">
-                    <Globe className="section-icon" />
-                    <span>Public URL</span>
-                  </div>
-                  <div className="url-field-row">
-                    <span className="url-prefix">
-                      {process.env.NEXT_PUBLIC_SITE_URL}/u/
-                    </span>
-                    <input
-                      name="publicId"
-                      placeholder="your-username"
-                      defaultValue={prefill.publicId}
-                      className="dark-input url-input"
-                    />
-                  </div>
-                  <p className="field-hint">Letters, numbers, hyphens, underscores only.</p>
-                </div>
-
-                {/* ── Section: Media ── */}
-                <div className="form-section">
-                  <div className="section-label">
-                    <Camera className="section-icon" />
-                    <span>Banner Image</span>
-                  </div>
-                  <div className="media-row">
-                    <label className="file-upload-btn">
-                      <input name="bannerFile" type="file" accept="image/*" className="sr-only" />
-                      <Camera size={14} />
-                      Upload file
-                    </label>
-                    <span className="or-divider">or</span>
-                    <input
-                      name="banner"
-                      type="url"
-                      placeholder="https://example.com/banner.jpg"
-                      defaultValue={prefill.banner}
-                      className="dark-input flex-1"
-                    />
-                  </div>
-                  {prefill.banner && (
-                    <div className="img-preview banner-preview">
-                      <img src={prefill.banner} alt="Banner preview" />
-                      <span className="img-preview-label">Current banner</span>
-                    </div>
-                  )}
-                  <p className="field-hint">Recommended: 1500×500px.</p>
-                </div>
-
-                <div className="form-section">
-                  <div className="section-label">
-                    <User className="section-icon" />
-                    <span>Profile Picture</span>
-                  </div>
-                  <div className="media-row">
-                    <label className="file-upload-btn">
-                      <input name="profilePicFile" type="file" accept="image/*" className="sr-only" />
-                      <User size={14} />
-                      Upload file
-                    </label>
-                    <span className="or-divider">or</span>
-                    <input
-                      name="profilePic"
-                      type="url"
-                      placeholder="https://example.com/avatar.jpg"
-                      defaultValue={prefill.profilePic}
-                      className="dark-input flex-1"
-                    />
-                  </div>
-                  {prefill.profilePic && (
-                    <div className="img-preview avatar-preview">
-                      <img src={prefill.profilePic} alt="Profile preview" />
-                      <span className="img-preview-label">Current picture</span>
-                    </div>
-                  )}
-                  <p className="field-hint">Leave blank to use your Google profile picture.</p>
-                </div>
-
-                {/* ── Section: About ── */}
-                <div className="form-section">
-                  <div className="section-label">
-                    <FileText className="section-icon" />
-                    <span>Bio</span>
-                  </div>
-                  <textarea
-                    name="bio"
-                    rows={3}
-                    placeholder="Tell your audience about yourself..."
-                    defaultValue={prefill.bio}
-                    className="dark-input dark-textarea"
-                  />
-                </div>
-
-                <div className="two-col">
-                  <div className="form-section">
-                    <div className="section-label">
-                      <Heart className="section-icon" />
-                      <span>Hobbies</span>
-                    </div>
-                    <input
-                      name="hobbies"
-                      placeholder="Photography, Travel, Coding"
-                      defaultValue={prefill.hobbies}
-                      className="dark-input"
-                    />
-                    <p className="field-hint">Comma-separated.</p>
-                  </div>
-
-                  <div className="form-section">
-                    <div className="section-label">
-                      <Tag className="section-icon" />
-                      <span>Categories</span>
-                    </div>
-                    <input
-                      name="categories"
-                      placeholder="Creator, Entrepreneur"
-                      defaultValue={prefill.categories}
-                      className="dark-input"
-                    />
-                    <p className="field-hint">Comma-separated.</p>
-                  </div>
-                </div>
-
-                {/* ── Section: Social Links ── */}
-                <div className="socials-section">
-                  <div className="socials-header">
-                    <span className="socials-title">Social Links</span>
-                    <span className="socials-badge">Connect your platforms</span>
-                  </div>
-
-                  <div className="socials-grid">
-                    {/* Instagram */}
-                    <div className="social-field">
-                      <label className="social-label">
-                        <span className="social-icon-wrap" style={{ background: 'linear-gradient(135deg,#f09433,#dc2743,#bc1888)' }}>
-                          <FaInstagramSquare size={13} />
-                        </span>
-                        Instagram
-                      </label>
-                      <input name="instagram" placeholder="@username or URL" defaultValue={prefill.instagram} className="dark-input social-input" />
-                    </div>
-
-                    {/* YouTube */}
-                    <div className="social-field">
-                      <label className="social-label">
-                        <span className="social-icon-wrap" style={{ background: 'linear-gradient(135deg,#FF0000,#cc0000)' }}>
-                          <FaYoutubeSquare size={13} />
-                        </span>
-                        YouTube
-                      </label>
-                      <input name="youtube" placeholder="@channel or URL" defaultValue={prefill.youtube} className="dark-input social-input" />
-                    </div>
-
-                    {/* LinkedIn */}
-                    <div className="social-field">
-                      <label className="social-label">
-                        <span className="social-icon-wrap" style={{ background: 'linear-gradient(135deg,#0077B5,#005fa3)' }}>
-                          <FaLinkedin size={13} />
-                        </span>
-                        LinkedIn
-                      </label>
-                      <input name="linkedin" placeholder="/in/username or URL" defaultValue={prefill.linkedin} className="dark-input social-input" />
-                    </div>
-
-                    {/* Facebook */}
-                    <div className="social-field">
-                      <label className="social-label">
-                        <span className="social-icon-wrap" style={{ background: 'linear-gradient(135deg,#1877F2,#0c5fd8)' }}>
-                          <FaFacebookSquare size={13} />
-                        </span>
-                        Facebook
-                      </label>
-                      <input name="facebook" placeholder="/username or URL" defaultValue={prefill.facebook} className="dark-input social-input" />
-                    </div>
-
-                    {/* X */}
-                    <div className="social-field">
-                      <label className="social-label">
-                        <span className="social-icon-wrap" style={{ background: 'linear-gradient(135deg,#14171A,#2b2b2b)' }}>
-                          <FaTwitterSquare size={13} />
-                        </span>
-                        X / Twitter
-                      </label>
-                      <input name="x" placeholder="@username or URL" defaultValue={prefill.x} className="dark-input social-input" />
-                    </div>
-
-                    {/* Pinterest */}
-                    <div className="social-field">
-                      <label className="social-label">
-                        <span className="social-icon-wrap" style={{ background: 'linear-gradient(135deg,#E60023,#ad081b)' }}>
-                          <FaPinterest size={13} />
-                        </span>
-                        Pinterest
-                      </label>
-                      <input name="pinterest" placeholder="/username or URL" defaultValue={prefill.pinterest} className="dark-input social-input" />
-                    </div>
-
-                    {/* Shopify */}
-                    <div className="social-field">
-                      <label className="social-label">
-                        <span className="social-icon-wrap" style={{ background: 'linear-gradient(135deg,#96bf48,#5e8e3e)' }}>
-                          <ShoppingBag size={13} />
-                        </span>
-                        Shopify
-                      </label>
-                      <input name="shopify" placeholder="https://yourstore.myshopify.com" defaultValue={prefill.shopify} className="dark-input social-input" />
-                    </div>
-
-                    {/* GitHub */}
-                    <div className="social-field">
-                      <label className="social-label">
-                        <span className="social-icon-wrap" style={{ background: 'linear-gradient(135deg,#24292e,#444d56)' }}>
-                          <FaGithub size={13} />
-                        </span>
-                        GitHub
-                      </label>
-                      <input name="github" placeholder="https://github.com/username" defaultValue={prefill.github} className="dark-input social-input" />
-                    </div>
-
-                    {/* Website — full width */}
-                    <div className="social-field social-field--wide">
-                      <label className="social-label">
-                        <span className="social-icon-wrap" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-                          <Globe size={13} />
-                        </span>
-                        Personal Website
-                      </label>
-                      <input name="website" placeholder="https://yourwebsite.com" defaultValue={prefill.website} className="dark-input social-input" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* ── Submit ── */}
-                <button type="submit" className="submit-btn">
-                  <span>{isEditing ? 'Update Profile' : 'Save & Continue'}</span>
-                  <ArrowRight size={16} />
-                </button>
-              </form>
-
-              {isEditing && (
-                <div className="cancel-row">
-                  <Link href="/" className="cancel-link">
-                    <X size={13} />
-                    Cancel
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Footer ── */}
-          <footer className="page-footer">
-            Powered by <span>Bio For IG</span>
-          </footer>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative rounded-xl border ${platform.enabled ? 'border-neutral-200 bg-white' : 'border-neutral-100 bg-neutral-50/50'} transition-all hover:shadow-md`}
+    >
+      <div className="flex items-center gap-3 p-3">
+        {/* Drag handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 transition"
+        >
+          <GripVertical size={18} />
         </div>
-      </main>
-    </>
+
+        {/* Icon with color */}
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white shadow-sm"
+          style={{ background: platform.color }}
+        >
+          {platform.icon}
+        </div>
+
+        {/* Input */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm font-semibold text-neutral-700">{platform.name}</span>
+            <button
+              onClick={() => onToggle(platform.id)}
+              className={`text-xs px-2 py-0.5 rounded-full transition ${
+                platform.enabled
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                  : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+              }`}
+            >
+              {platform.enabled ? 'Visible' : 'Hidden'}
+            </button>
+          </div>
+          <input
+            type="text"
+            value={platform.value}
+            onChange={(e) => onUpdate(platform.id, e.target.value)}
+            placeholder={platform.placeholder}
+            className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+          />
+        </div>
+
+        {/* Remove button */}
+        <button
+          onClick={() => onRemove(platform.id)}
+          className="shrink-0 rounded-lg p-2 text-neutral-400 opacity-0 transition group-hover:opacity-100 hover:bg-red-50 hover:text-red-500"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    </div>
   )
 }
 
-/* ─── Light Theme Styles ───────────────────────────────────────────────── */
-const PAGE_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+// Sortable custom link item
+function SortableCustomLinkItem({
+  link,
+  onUpdate,
+  onRemove,
+}: {
+  link: CustomLink
+  onUpdate: (id: string, field: 'title' | 'url', value: string) => void
+  onRemove: (id: string) => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: link.id })
 
-  /* ── Root ── */
-  .page-root {
-    min-height: 100vh;
-    background: #ffffff;
-    position: relative;
-    overflow-x: hidden;
-  }
-
-  /* ── Page layout ── */
-  .page-content {
-    position: relative;
-    z-index: 2;
-    max-width: 1050px;
-    margin: 0 auto;
-    padding: 28px 20px 60px;
-    animation: fadein .4s ease both;
-  }
-  @keyframes fadein {
-    from { opacity: 0; transform: translateY(-10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  /* ── Header ── */
-  .page-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 32px;
-  }
-  .logo-mark {
-    width: 38px; height: 38px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #6366f1, #a855f7);
-    display: grid;
-    place-items: center;
-    font-size: .65rem;
-    font-weight: 800;
-    color: white;
-    letter-spacing: .05em;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  }
-  .logo-name {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #111827;
-    letter-spacing: -.01em;
-    flex: 1;
-  }
-  .header-right { margin-left: auto; }
-
-  /* ── Form card ── */
-  .form-card {
-    position: relative;
-    border-radius: 28px;
-    background: #ffffff;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
-    overflow: hidden;
-  }
-  .card-inner {
-    padding: 36px 36px 40px;
-  }
-  @media (max-width: 600px) {
-    .card-inner { padding: 24px 20px 32px; }
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
   }
 
-  /* ── Form title ── */
-  .form-title-block { margin-bottom: 28px; }
-  .form-step-badge {
-    display: inline-block;
-    font-size: .7rem;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #6366f1;
-    background: #eef2ff;
-    border: 1px solid #c7d2fe;
-    padding: 4px 12px;
-    border-radius: 99px;
-    margin-bottom: 12px;
-  }
-  .form-title {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #111827;
-    letter-spacing: -.025em;
-    line-height: 1.1;
-  }
-  .form-subtitle {
-    margin-top: 8px;
-    color: #6b7280;
-    font-size: .9rem;
-    line-height: 1.6;
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3 transition-all hover:shadow-md"
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600"
+      >
+        <GripVertical size={18} />
+      </div>
+
+      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <input
+          type="text"
+          value={link.title}
+          onChange={(e) => onUpdate(link.id, 'title', e.target.value)}
+          placeholder="Link title (e.g., My Blog)"
+          className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        />
+        <input
+          type="url"
+          value={link.url}
+          onChange={(e) => onUpdate(link.id, 'url', e.target.value)}
+          placeholder="https://example.com"
+          className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        />
+      </div>
+
+      <button
+        onClick={() => onRemove(link.id)}
+        className="shrink-0 rounded-lg p-2 text-neutral-400 opacity-0 transition group-hover:opacity-100 hover:bg-red-50 hover:text-red-500"
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>
+  )
+}
+
+// Live Preview Component
+function LivePreview({ data, sessionEmail }: { data: ProfileData; sessionEmail: string }) {
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
+
+  const enabledSocials = data.socials.filter(s => s.enabled && s.value.trim())
+
+  return (
+    <div className="sticky top-6 rounded-2xl border border-neutral-200 bg-white shadow-lg overflow-hidden">
+      {/* Banner */}
+      <div className="relative h-32 bg-gradient-to-r from-indigo-500 to-purple-600">
+        {data.banner && !imageErrors[data.banner] && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={data.banner}
+            alt="Banner"
+            className="h-full w-full object-cover"
+            onError={() => setImageErrors(prev => ({ ...prev, [data.banner]: true }))}
+          />
+        )}
+      </div>
+
+      {/* Profile Picture */}
+      <div className="relative px-6">
+        <div className="absolute -top-12 left-6">
+          <div className="h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-neutral-100 shadow-md">
+            {data.profilePic && !imageErrors[data.profilePic] ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={data.profilePic}
+                alt="Profile"
+                className="h-full w-full object-cover"
+                onError={() => setImageErrors(prev => ({ ...prev, [data.profilePic]: true }))}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
+                <User size={32} className="text-indigo-400" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="mt-14 px-6 pb-6">
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h3 className="text-xl font-bold text-neutral-900">@{data.publicId || 'username'}</h3>
+            <p className="text-sm text-neutral-500">{sessionEmail}</p>
+          </div>
+        </div>
+
+        {data.bio && (
+          <p className="mb-4 text-sm text-neutral-600 leading-relaxed">{data.bio}</p>
+        )}
+
+        {/* Hobbies */}
+        {data.hobbies.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {data.hobbies.map((hobby) => (
+              <span key={hobby} className="rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-600">
+                {hobby}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Categories */}
+        {data.categories.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {data.categories.map((cat) => (
+              <span key={cat} className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600">
+                {cat}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Social Links */}
+        <div className="space-y-2">
+          {enabledSocials.map((social) => (
+            <a
+              key={social.id}
+              href={social.value.startsWith('http') ? social.value : `https://${social.id}.com/${social.value.replace('@', '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-all hover:scale-[1.02] hover:border-neutral-300 hover:shadow-md"
+              style={{ borderLeft: `3px solid ${social.color.split(',')[0] || '#6366f1'}` }}
+            >
+              <span className="text-base">{social.icon}</span>
+              {social.name}
+            </a>
+          ))}
+
+          {data.customLinks.map((link) => (
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition-all hover:scale-[1.02] hover:border-neutral-300 hover:shadow-md"
+            >
+              <Link2 size={16} />
+              {link.title || link.url.replace(/^https?:\/\//, '').slice(0, 30)}
+            </a>
+          ))}
+        </div>
+
+        {enabledSocials.length === 0 && data.customLinks.length === 0 && (
+          <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-center text-sm text-neutral-500">
+            Add links below to see them here
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function CompleteProfilePage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [sessionEmail, setSessionEmail] = useState('')
+
+  // Form data
+  const [profileData, setProfileData] = useState<ProfileData>({
+    publicId: '',
+    banner: '',
+    profilePic: '',
+    bio: '',
+    hobbies: [],
+    categories: [],
+    socials: [
+      { id: 'instagram', name: 'Instagram', icon: <FaInstagram size={16} />, placeholder: '@username or URL', color: 'linear-gradient(135deg,#f09433,#dc2743,#bc1888)', enabled: true, value: '' },
+      { id: 'youtube', name: 'YouTube', icon: <FaYoutube size={16} />, placeholder: '@channel or URL', color: '#FF0000', enabled: true, value: '' },
+      { id: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin size={16} />, placeholder: '/in/username or URL', color: '#0077B5', enabled: true, value: '' },
+      { id: 'facebook', name: 'Facebook', icon: <FaFacebook size={16} />, placeholder: '/username or URL', color: '#1877F2', enabled: true, value: '' },
+      { id: 'twitter', name: 'Twitter', icon: <Twitter size={16} />, placeholder: '@username or URL', color: '#14171A', enabled: true, value: '' },
+      { id: 'pinterest', name: 'Pinterest', icon: <FaPinterest size={16} />, placeholder: '/username or URL', color: '#E60023', enabled: true, value: '' },
+      { id: 'shopify', name: 'Shopify', icon: <ShoppingBag size={14} />, placeholder: 'store.myshopify.com', color: '#96bf48', enabled: true, value: '' },
+      { id: 'github', name: 'GitHub', icon: <FaGithub size={16} />, placeholder: 'username or URL', color: '#24292e', enabled: true, value: '' },
+      { id: 'tiktok', name: 'TikTok', icon: <FaTiktok size={16} />, placeholder: '@username or URL', color: '#000000', enabled: true, value: '' },
+      { id: 'twitch', name: 'Twitch', icon: <FaTwitch size={16} />, placeholder: '/username or URL', color: '#9146FF', enabled: true, value: '' },
+      { id: 'discord', name: 'Discord', icon: <FaDiscord size={16} />, placeholder: 'invite URL', color: '#5865F2', enabled: true, value: '' },
+    ],
+    customLinks: [],
+  })
+
+  // New custom link form
+  const [newLinkTitle, setNewLinkTitle] = useState('')
+  const [newLinkUrl, setNewLinkUrl] = useState('')
+
+  // File upload refs
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  // Load existing data
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch('/api/profile')
+        if (res.ok) {
+          const data = await res.json()
+          if (data) {
+            setProfileData({
+              publicId: data.publicId || '',
+              banner: data.banner || '',
+              profilePic: data.profilePic || '',
+              bio: data.bio || '',
+              hobbies: data.hobbies || [],
+              categories: data.categories || [],
+              socials: profileData.socials.map(s => ({
+                ...s,
+                value: data.links?.[s.id] || '',
+              })),
+              customLinks: data.customLinks || [],
+            })
+            if (data.email) setSessionEmail(data.email)
+          }
+        }
+        
+        // Get session email
+        const sessionRes = await fetch('/api/session')
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json()
+          if (sessionData.email) setSessionEmail(sessionData.email)
+        }
+      } catch (err) {
+        console.error('Failed to load profile:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [])
+
+  // Auto-hide saved indicator
+  useEffect(() => {
+    if (saved) {
+      const timer = setTimeout(() => setSaved(false), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [saved])
+
+  // Drag end handler for socials
+  const handleSocialDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (active.id !== over?.id) {
+      const oldIndex = profileData.socials.findIndex((s) => s.id === active.id)
+      const newIndex = profileData.socials.findIndex((s) => s.id === over?.id)
+      setProfileData(prev => ({
+        ...prev,
+        socials: arrayMove(prev.socials, oldIndex, newIndex),
+      }))
+    }
   }
 
-  /* ── Error banner ── */
-  .error-banner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-    padding: 12px 16px;
-    border-radius: 14px;
-    font-size: .85rem;
-    margin-bottom: 24px;
-  }
-  .error-icon { font-size: 1rem; flex-shrink: 0; }
-
-  /* ── Form sections ── */
-  .profile-form { display: flex; flex-direction: column; gap: 24px; }
-  .form-section { display: flex; flex-direction: column; gap: 8px; }
-
-  .section-label {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: .8rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    color: #4b5563;
-  }
-  .section-icon {
-    width: 14px; height: 14px;
-    color: #6366f1;
-    flex-shrink: 0;
+  // Drag end handler for custom links
+  const handleCustomLinkDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (active.id !== over?.id) {
+      const oldIndex = profileData.customLinks.findIndex((l) => l.id === active.id)
+      const newIndex = profileData.customLinks.findIndex((l) => l.id === over?.id)
+      setProfileData(prev => ({
+        ...prev,
+        customLinks: arrayMove(prev.customLinks, oldIndex, newIndex),
+      }))
+    }
   }
 
-  .field-hint {
-    font-size: .75rem;
-    color: #9ca3af;
-    line-height: 1.4;
+  // Social handlers
+  const updateSocialValue = (id: string, value: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      socials: prev.socials.map(s => s.id === id ? { ...s, value } : s),
+    }))
   }
 
-  /* ── Inputs ── */
-  .dark-input {
-    width: 100%;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 11px 16px;
-    font-size: .875rem;
-    color: #111827;
-    outline: none;
-    transition: border-color .2s, box-shadow .2s;
-    -webkit-appearance: none;
-  }
-  .dark-input::placeholder { color: #9ca3af; }
-  .dark-input:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
-  }
-  .dark-textarea { resize: none; }
-
-  /* URL field */
-  .url-field-row {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: border-color .2s, box-shadow .2s;
-  }
-  .url-field-row:focus-within {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
-  }
-  .url-prefix {
-    padding: 11px 12px 11px 16px;
-    font-size: .8rem;
-    color: #6b7280;
-    white-space: nowrap;
-    border-right: 1px solid #e5e7eb;
-    background: #f9fafb;
-    flex-shrink: 0;
-  }
-  .url-input {
-    flex: 1;
-    border: none !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
+  const toggleSocialEnabled = (id: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      socials: prev.socials.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s),
+    }))
   }
 
-  /* ── Media row ── */
-  .media-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .file-upload-btn {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 10px 16px;
-    border-radius: 12px;
-    background: #eef2ff;
-    border: 1px solid #c7d2fe;
-    color: #4f46e5;
-    font-size: .82rem;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background .2s, transform .15s;
-  }
-  .file-upload-btn:hover {
-    background: #e0e7ff;
-    transform: translateY(-1px);
-  }
-  .or-divider {
-    font-size: .75rem;
-    color: #9ca3af;
-    flex-shrink: 0;
-  }
-  .sr-only {
-    position: absolute; width: 1px; height: 1px;
-    padding: 0; margin: -1px; overflow: hidden;
-    clip: rect(0,0,0,0); white-space: nowrap; border-width: 0;
+  const removeSocial = (id: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      socials: prev.socials.filter(s => s.id !== id),
+    }))
   }
 
-  /* Image previews */
-  .img-preview {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 4px;
-  }
-  .banner-preview img {
-    height: 60px;
-    width: 160px;
-    object-fit: cover;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-  }
-  .avatar-preview img {
-    height: 48px; width: 48px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 1px solid #e5e7eb;
-  }
-  .img-preview-label {
-    font-size: .72rem;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    font-weight: 600;
+  // Custom link handlers
+  const addCustomLink = () => {
+    if (!newLinkTitle.trim() && !newLinkUrl.trim()) return
+    setProfileData(prev => ({
+      ...prev,
+      customLinks: [
+        ...prev.customLinks,
+        {
+          id: `custom-${Date.now()}-${Math.random()}`,
+          title: newLinkTitle.trim() || 'Untitled',
+          url: newLinkUrl.trim(),
+          icon: 'link',
+        },
+      ],
+    }))
+    setNewLinkTitle('')
+    setNewLinkUrl('')
   }
 
-  /* ── Two col layout ── */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  @media (max-width: 540px) {
-    .two-col { grid-template-columns: 1fr; }
+  const updateCustomLink = (id: string, field: 'title' | 'url', value: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      customLinks: prev.customLinks.map(l => l.id === id ? { ...l, [field]: value } : l),
+    }))
   }
 
-  /* ── Socials section ── */
-  .socials-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 20px;
-    padding: 22px 22px 24px;
-  }
-  .socials-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .socials-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #111827;
-    letter-spacing: -.01em;
-  }
-  .socials-badge {
-    font-size: .7rem;
-    font-weight: 600;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: #6366f1;
-    background: #eef2ff;
-    border: 1px solid #c7d2fe;
-    padding: 3px 10px;
-    border-radius: 99px;
-  }
-  .socials-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-  @media (max-width: 540px) {
-    .socials-grid { grid-template-columns: 1fr; }
-  }
-  .social-field { display: flex; flex-direction: column; gap: 7px; }
-  .social-field--wide { grid-column: 1 / -1; }
-
-  .social-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: .78rem;
-    font-weight: 600;
-    color: #4b5563;
-    letter-spacing: .02em;
-    cursor: default;
-  }
-  .social-icon-wrap {
-    width: 24px; height: 24px;
-    border-radius: 7px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  }
-  .social-input {
-    font-size: .82rem;
-    padding: 9px 14px;
+  const removeCustomLink = (id: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      customLinks: prev.customLinks.filter(l => l.id !== id),
+    }))
   }
 
-  /* ── Submit button ── */
-  .submit-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 15px 24px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #6366f1, #a855f7);
-    color: #fff;
-    font-size: .95rem;
-    font-weight: 700;
-    letter-spacing: .01em;
-    border: none;
-    cursor: pointer;
-    transition: transform .2s, box-shadow .2s, opacity .2s;
-    box-shadow: 0 4px 12px rgba(99,102,241,0.25);
-    margin-top: 8px;
-  }
-  .submit-btn:hover {
-    transform: translateY(-2px) scale(1.005);
-    box-shadow: 0 8px 20px rgba(99,102,241,0.35);
-  }
-  .submit-btn:active {
-    transform: translateY(0) scale(.99);
-    opacity: .9;
+  // File upload handlers
+  const uploadFile = async (file: File, type: 'banner' | 'avatar'): Promise<string | null> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', type)
+
+    const res = await fetch('/api/upload', { method: 'POST', body: formData })
+    if (res.ok) {
+      const data = await res.json()
+      return data.url
+    }
+    return null
   }
 
-  /* ── Cancel link ── */
-  .cancel-row {
-    display: flex;
-    justify-content: center;
-    margin-top: 16px;
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLoading(true)
+    const url = await uploadFile(file, 'banner')
+    if (url) setProfileData(prev => ({ ...prev, banner: url }))
+    setLoading(false)
   }
-  .cancel-link {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: .82rem;
-    color: #9ca3af;
-    text-decoration: none;
-    transition: color .2s;
-  }
-  .cancel-link:hover { color: #4b5563; }
 
-  /* ── Footer ── */
-  .page-footer {
-    margin-top: 28px;
-    text-align: center;
-    font-size: .7rem;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #d1d5db;
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLoading(true)
+    const url = await uploadFile(file, 'avatar')
+    if (url) setProfileData(prev => ({ ...prev, profilePic: url }))
+    setLoading(false)
   }
-  .page-footer span {
-    color: #9ca3af;
-    font-weight: 600;
+
+  // Save profile
+  const saveProfile = async () => {
+    if (!profileData.publicId.trim()) {
+      setError('Please choose a public username')
+      return
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(profileData.publicId)) {
+      setError('Username can only contain letters, numbers, hyphens, and underscores')
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          publicId: profileData.publicId,
+          banner: profileData.banner,
+          profilePic: profileData.profilePic,
+          bio: profileData.bio,
+          hobbies: profileData.hobbies,
+          categories: profileData.categories,
+          links: Object.fromEntries(profileData.socials.map(s => [s.id, s.value])),
+          customLinks: profileData.customLinks,
+        }),
+      })
+
+      if (res.ok) {
+        setSaved(true)
+        setTimeout(() => {
+          router.push('/')
+        }, 500)
+      } else {
+        const errorData = await res.json()
+        setError(errorData.message || 'Failed to save profile')
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
-`
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
+  if (loading && !profileData.publicId && !profileData.bio) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-white via-neutral-50 to-neutral-100">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-white via-neutral-50 to-neutral-100">
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        {/* Header */}
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md transition group-hover:scale-105">
+              <span className="text-xs font-black">B</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight">Bio For IG</h1>
+              <p className="text-xs text-neutral-500">Customize your link in bio page</p>
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            {saved && (
+              <span className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 animate-in fade-in slide-in-from-right-2">
+                <Check size={12} /> Saved
+              </span>
+            )}
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+              {saving ? 'Saving...' : 'Publish Changes'}
+            </button>
+          </div>
+        </header>
+
+        {error && (
+          <div className="mb-6 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <AlertCircle size={16} />
+            {error}
+          </div>
+        )}
+
+        {/* Two column layout */}
+        <div className="grid gap-8 lg:grid-cols-2">
+          {/* Left Column - Editor */}
+          <div className="space-y-6">
+            {/* Public URL */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-700">
+                <Globe size={16} /> Your unique URL
+              </label>
+              <div className="flex items-center rounded-xl border border-neutral-200 bg-neutral-50 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100">
+                <span className="px-3 text-sm text-neutral-500">bioforig.com/u/</span>
+                <input
+                  type="text"
+                  value={profileData.publicId}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, publicId: e.target.value }))}
+                  placeholder="your-username"
+                  className="flex-1 rounded-r-xl border-0 bg-transparent px-3 py-3 text-sm outline-none"
+                />
+              </div>
+              <p className="mt-2 text-xs text-neutral-400">Letters, numbers, hyphens, underscores only</p>
+            </div>
+
+            {/* Images */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-4 text-lg font-bold">Media</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-neutral-700">
+                    <Camera size={14} /> Banner Image
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => bannerInputRef.current?.click()}
+                      className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50"
+                    >
+                      Upload Banner
+                    </button>
+                    <input
+                      type="text"
+                      value={profileData.banner}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, banner: e.target.value }))}
+                      placeholder="https:// or /uploads/..."
+                      className="flex-1 rounded-xl border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                    />
+                  </div>
+                  <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
+                </div>
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-medium text-neutral-700">
+                    <User size={14} /> Profile Picture
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium hover:bg-neutral-50"
+                    >
+                      Upload Avatar
+                    </button>
+                    <input
+                      type="text"
+                      value={profileData.profilePic}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, profilePic: e.target.value }))}
+                      placeholder="https:// or /uploads/..."
+                      className="flex-1 rounded-xl border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                    />
+                  </div>
+                  <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                </div>
+              </div>
+            </div>
+
+            {/* Bio */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-700">
+                <FileText size={16} /> Bio
+              </label>
+              <textarea
+                value={profileData.bio}
+                onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                rows={3}
+                placeholder="Tell your audience about yourself..."
+                className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              />
+            </div>
+
+            {/* Hobbies & Categories */}
+            <div className="grid gap-6 sm:grid-cols-2">
+              <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-700">
+                  <Heart size={16} /> Hobbies
+                </label>
+                <input
+                  type="text"
+                  value={profileData.hobbies.join(', ')}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, hobbies: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
+                  placeholder="Photography, Travel, Coding"
+                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                />
+                <p className="mt-2 text-xs text-neutral-400">Comma-separated</p>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-700">
+                  <Tag size={16} /> Categories
+                </label>
+                <input
+                  type="text"
+                  value={profileData.categories.join(', ')}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, categories: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
+                  placeholder="Creator, Entrepreneur, Artist"
+                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                />
+                <p className="mt-2 text-xs text-neutral-400">Comma-separated</p>
+              </div>
+            </div>
+
+            {/* Social Links - Sortable */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-bold">Social Links</h3>
+                <span className="text-xs text-neutral-400">Drag to reorder</span>
+              </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleSocialDragEnd}>
+                <SortableContext items={profileData.socials.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {profileData.socials.map((platform) => (
+                      <SortableSocialItem
+                        key={platform.id}
+                        platform={platform}
+                        onUpdate={updateSocialValue}
+                        onToggle={toggleSocialEnabled}
+                        onRemove={removeSocial}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+
+              {/* Add new social button */}
+              <button
+                onClick={() => {
+                  const newId = `social-${Date.now()}`
+                  setProfileData(prev => ({
+                    ...prev,
+                    socials: [
+                      ...prev.socials,
+                      {
+                        id: newId,
+                        name: 'New Link',
+                        icon: <Share2 size={14} />,
+                        placeholder: 'https://...',
+                        color: '#6366f1',
+                        enabled: true,
+                        value: '',
+                      },
+                    ],
+                  }))
+                }}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 py-3 text-sm font-medium text-neutral-500 transition hover:border-indigo-300 hover:text-indigo-600"
+              >
+                <Plus size={16} /> Add custom social link
+              </button>
+            </div>
+
+            {/* Custom Links - Sortable */}
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-4 text-lg font-bold">Custom Links</h3>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCustomLinkDragEnd}>
+                <SortableContext items={profileData.customLinks.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {profileData.customLinks.map((link) => (
+                      <SortableCustomLinkItem
+                        key={link.id}
+                        link={link}
+                        onUpdate={updateCustomLink}
+                        onRemove={removeCustomLink}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+
+              {/* Add new custom link */}
+              <div className="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    value={newLinkTitle}
+                    onChange={(e) => setNewLinkTitle(e.target.value)}
+                    placeholder="Link title (e.g., My Portfolio)"
+                    className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                  />
+                  <input
+                    type="url"
+                    value={newLinkUrl}
+                    onChange={(e) => setNewLinkUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-indigo-400"
+                  />
+                </div>
+                <button
+                  onClick={addCustomLink}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-50 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-100"
+                >
+                  <Plus size={14} /> Add Custom Link
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Live Preview */}
+          <div>
+            <LivePreview data={profileData} sessionEmail={sessionEmail || 'user@example.com'} />
+            <p className="mt-3 text-center text-xs text-neutral-400">
+              Live preview updates as you type
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom Save Bar (mobile) */}
+        <div className="fixed bottom-0 left-0 right-0 border-t border-neutral-200 bg-white/80 backdrop-blur-lg lg:hidden">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+            <span className="text-sm text-neutral-500">Unsaved changes</span>
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700"
+            >
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+              {saving ? 'Saving...' : 'Publish'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
