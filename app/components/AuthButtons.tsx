@@ -9,7 +9,7 @@ export default function AuthButtons(props: { signedIn: boolean }) {
   const handleSignIn = async () => {
     setLoading(true)
     try {
-      await signIn('google', { callbackUrl: '/subscribe' })
+      await signIn('google', { callbackUrl: '/link-in-my-bio' })
       setLoading(false)
     } catch (error) {
       setLoading(false)
