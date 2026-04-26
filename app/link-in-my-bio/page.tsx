@@ -369,7 +369,6 @@ export default function CompleteProfilePage() {
       { id: 'youtube', name: 'YouTube', icon: <FaYoutube size={16} />, placeholder: '@channel or URL', color: '#FF0000', enabled: true, value: '' },
       { id: 'linkedin', name: 'LinkedIn', icon: <FaLinkedin size={16} />, placeholder: '/in/username or URL', color: '#0077B5', enabled: true, value: '' },
       { id: 'facebook', name: 'Facebook', icon: <FaFacebook size={16} />, placeholder: '/username or URL', color: '#1877F2', enabled: true, value: '' },
-      { id: 'twitter', name: 'Twitter', icon: <Twitter size={16} />, placeholder: '@username or URL', color: '#14171A', enabled: true, value: '' },
       { id: 'pinterest', name: 'Pinterest', icon: <FaPinterest size={16} />, placeholder: '/username or URL', color: '#E60023', enabled: true, value: '' },
       { id: 'shopify', name: 'Shopify', icon: <ShoppingBag size={14} />, placeholder: 'store.myshopify.com', color: '#96bf48', enabled: true, value: '' },
       { id: 'github', name: 'GitHub', icon: <FaGithub size={16} />, placeholder: 'username or URL', color: '#24292e', enabled: true, value: '' },
