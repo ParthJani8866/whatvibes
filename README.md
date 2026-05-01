@@ -1,36 +1,21 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+**The Ultimate Link in Bio Tool https://bioforig.com**
+Create a stunning link in bio page with all your social links, track every click, collect emails, and grow your audience on Instagram, TikTok, and YouTube.
 
-## Getting Started
+**Why creators choose Bio For IG**
+On Page SEO & Dashboard Analytics
+Your link page is fully optimised for search engines. Dashboard shows total views, unique visitors, top links, and geographic performance. Turn data into growth.
 
-First, run the development server:
+**Email Subscriptions & Contact Downloads**
+Turn anonymous visitors into subscribers. Add a signup form to your link in bio page; download all contacts as CSV with one click. Build your tribe while you sleep.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**QR Code for Your Link Page**
+Dynamic QR code that always points to your latest links. Perfect for menu cards, stickers, and conference booths — bridge offline and online marketing.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**2 Quality Backlinks for Your Page**
+We automatically add two authoritative backlinks from our partner network to your page. This boosts your domain authority and helps you rank higher on Google — built-in SEO boost.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+**Boost Instagram, YouTube & Facebook Visibility**
+Our link in bio page is designed to work with social algorithms. Clean interface = higher time-on-site, which signals quality to platforms. Track which source sends most traffic.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**How This Helps You Compete**
+With Bio For IG, you're not just listing links — you're building a professional hub that showcases your brand. Analytics help you double down on what works. Email capture builds a direct line to your fans. Backlinks boost your SEO. And the QR code bridges offline and online. Together, these tools give you the edge to stand out and grow faster than competitors.
